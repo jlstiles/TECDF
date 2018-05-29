@@ -1,53 +1,40 @@
-library(reshape2)
-library(plyr)
-library(dplyr)
-library(mvtnorm)
-library(ggplot2)
-library(foreach)
-library(doSNOW)
-library(SuperLearner)
-library(parallel)
-library(reshape)
-library(plyr)
-library(cowplot)
-# library(origami)
-library(geepack)
-library(mvtnorm)
+# library(reshape2)
+# library(plyr)
+# library(dplyr)
+# library(SuperLearner)
+
 # playing with integrating functions
-f2 = function(x) (1/sqrt(2*pi))*exp(-x^2/2)
-f4 = function(x) (1/sqrt(2*pi))*exp(-x^2/2)*(1.5-x^2/2)
-f6 = function(x) (1/8)*(1/sqrt(2*pi))*exp(-x^2/2)*(15-10*x^2+x^4)
-f8 = function(x) (1/48)*(1/sqrt(2*pi))*exp(-x^2/2)*(105-105*x^2+21*x^4-x^6)
+kernel_list = list(f2 = function(x) (1/sqrt(2*pi))*exp(-x^2/2),
+                   f4 = function(x) (1/sqrt(2*pi))*exp(-x^2/2)*(1.5-x^2/2),
+                   f6 = function(x) (1/8)*(1/sqrt(2*pi))*exp(-x^2/2)*(15-10*x^2+x^4),
+                   f8 = function(x) (1/48)*(1/sqrt(2*pi))*exp(-x^2/2)*(105-105*x^2+21*x^4-x^6))
 
-s2 = integrate(f2, lower = -100, upper = 100, subdivisions = 10000)$value
-s4 = integrate(f4, lower = -100, upper = 100, subdivisions = 10000)$value
-s6 = integrate(f6, lower = -100, upper = 100, subdivisions = 10000)$value
-s8 = integrate(f8, lower = -100, upper = 100, subdivisions = 10000)$value
+# integrate to 1?
+lapply(kernel_list, FUN = function(x) {
+  integrate(x, lower = -100, upper = 100, subdivisions = 10000)$value
+} )
+
+# generate_plots
+
+plot_kernels = lapply(kernel_list, FUN = function(x) {
+  s = seq(-5,5,.001)
+  y = x(s)
+  plot = qplot(x=s,y=y)+geom_line()
+  return(plot)
+})
+plot_kernels[[4]]
+
+# check orthogonality
 
 
-f2 = function(x) (1/sqrt(2*pi))*exp(-x^2/2)
-f4 = function(x) (1/sqrt(2*pi))*exp(-x^2/2)*(1.5-x^2/2)*
-f6 = function(x) (1/8)*(1/sqrt(2*pi))*exp(-x^2/2)*(15-10*x^2+x^4)
-f8 = function(x) (1/48)*(1/sqrt(2*pi))*exp(-x^2/2)*(105-105*x^2+21*x^4-x^6)
-
-ff2 = function(x) x^3*f8(x)
+ff2 = function(x) x^2*kernel_list[[4]](x)
 int2 = integrate(ff2, lower = -10, upper = 10, subdivisions = 10000)$value
 int2
 
-ff6 = function(x) f8(x)*x^6
+ff6 = function(x) kernel_list[[4]](x)*x^6
 int6 = integrate(ff6, lower = -10, upper = 10, subdivisions = 10000)$value
 int6
 
-x = seq(-5,5,.001)
-y = f8(x)
-plot(x,y)
-
-ttt = function(x) f8(x)*x^6
-
-f1 = function(x) (2-2*(1-x))
-f2 = function(x) 3-8*(1-x)+4*(1-x)^2
-
-library(orthopolynom)
 chebs = chebyshev.u.polynomials(10, normalized=TRUE)
 chebs
 polyL =  legendre.polynomials(10,normalized=TRUE)
@@ -148,7 +135,7 @@ kernel = UU
 h=.1
 t=c(-.3,-.2,-.1,0,.1,.2,.3,.4,.5,.6,.7)
 # t=.4
-ff= gentmle::gentmle_alt1(initdata=tmledata, estimate_fun = blipdist_estimate,
+ff= gentmle_alt1(initdata=tmledata, estimate_fun = blipdist_estimate,
              update_fun = blipdist_update,max_iter = 1000, t=t, h=h,
              kernel = U)
 

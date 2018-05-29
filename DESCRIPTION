@@ -5,14 +5,63 @@ Version: 0.1.0
 Author: Jonathan Levy <jlstilesmusic@gmail.com>
 Maintainer: Jonathan Levy <jlstilesmusic@gmail.com>
 Description: A package to compute TMLE's for various parameters of interest, keeping the books in the process for analysis.
-License: GPL-3
-Depends:
-    R (>= 3.0.0),
-    SuperLearner,
-    origami,
-    plyr,
+Depends: R (>= 2.14.0)
+Imports:
+    parallel,
+    foreach,
+    doSNOW,
+    geepack,
+    mvtnorm,
+    orthopolynom,
     ggplot2,
-    abind
-LazyData: TRUE
-BugReports: https://github.com/jlstiles
-RoxygenNote: 6.0.1
+    cowplot
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown,
+    glmnet,
+    devtools,
+    dplyr,
+    drat,
+    rgl,
+    condensier,
+    cvAUC,
+    forecast,
+    nloptr,
+    rugarch,
+    nnls,
+    tsDyn,
+    Rsolnp,
+    xgboost,
+    speedglm,
+    randomForest,
+    SuperLearner,
+    h2o,
+    future,
+    e1071,
+    earth,
+    R.rsp,
+    kerasR,
+    keras,
+    reticulate,
+    MASS,
+    arm,
+    hal,
+    rJava,
+    bartMachine,
+    hal9001,
+    devel
+Remotes:
+    github::osofr/condensier,
+    github::tlverse/delayed,
+    github::jeremyrcoyle/hal9001
+License: GPL-3
+BugReports: https://github.com/jlstiles/cateSurvival/issues
+Encoding: UTF-8
+LazyData: yes
+LazyLoad: yes
+VignetteBuilder:
+    knitr,
+    R.rsp
+RoxygenNote: 6.0.1.9000
+Roxygen: list(markdown = TRUE)
