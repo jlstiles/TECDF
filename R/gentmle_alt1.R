@@ -12,10 +12,10 @@ truncate <- function(x, lower = 0.01, upper = 1 - lower) {
 # fluctuation
 #' @export
 logit_fluctuate <- function(tmledata, flucmod, truncate = 0) {
-    suppressWarnings({
-        fluc <- glm(flucmod, data = tmledata, family = "binomial")
-    })
-    list(eps = coef(fluc))
+  suppressWarnings({
+    fluc <- glm(flucmod, data = tmledata, family = "binomial")
+  })
+  list(eps = coef(fluc))
 }
 
 
@@ -28,47 +28,51 @@ logit_fluctuate <- function(tmledata, flucmod, truncate = 0) {
 #' @param ..., Extra arguments that can be passed to update_fun and estimate_fun
 #'
 #' @export
-gentmle_alt1 <- function(initdata, estimate_fun, update_fun, max_iter = 100,N=NULL,
-                         t,h, kernel, ...) {
-
-    converge <- F
-    n=length(initdata$Y)
-    # cat(sprintf('bw: %f\n',bw))
+gentmle_alt1 <- function(initdata, estimate_fun, update_fun, max_iter = 100, N=NULL,
+                         t,h, kernel, kernel_cdf=NULL, ...) {
+  
+  converge <- F
+  n=length(initdata$Y)
+  # cat(sprintf('bw: %f\n',bw))
+  if (is.null(kernel_cdf)) {
     eststep <- estimate_fun(tmledata=initdata, t=t, h=h, kernel=kernel)
-
-    initests <- eststep$ests
-    if (is.null(N)) N=n
-    order <- 1/N
-
-    for (j in seq_len(max_iter)) {
-#
-#         if (any(apply(eststep$HAW,2,FUN = function(x) all(x==0))==TRUE))
-#         {
-#         ED <- sapply(eststep$Dstar, mean)
-#         break}
-        updatestep <- update_fun(tmledata=eststep)
-        eststep <- estimate_fun(tmledata=updatestep,t=t, h=h, kernel=kernel)
-
-        ED <- apply(eststep$Dstar,2,mean)
-        ED2 <- apply(eststep$Dstar,2,sd)
-        # cat(sprintf('ED_psi=%e ED_sigma=%e psi=%f sigma2=%f\n coef_h=%f coef_Cy=%f
-        # coef_Cg=%f\n',ED[1],ED[2],eststep$ests[1],sigma2=eststep$ests[2],updatestep$coefs[1],updatestep$coefs[2],updatestep$coefs[3]))
-
-        if (all(abs(ED) < ED2*order)) {
-            converge <- T
-            break
-        }
-
-
-
+  } else {
+    eststep <- estimate_fun(tmledata=initdata, t=t, h=h, kernel=kernel, kernel_cdf = kernel_cdf)
+  }
+  
+  initests <- eststep$ests
+  if (is.null(N)) N=n
+  order <- 1/N
+  
+  for (j in seq_len(max_iter)) {
+    #
+    #         if (any(apply(eststep$HAW,2,FUN = function(x) all(x==0))==TRUE))
+    #         {
+    #         ED <- sapply(eststep$Dstar, mean)
+    #         break}
+    updatestep <- update_fun(tmledata=eststep)
+    if (is.null(kernel_cdf)) {
+      eststep <- estimate_fun(tmledata=updatestep, t=t, h=h, kernel=kernel)
+    } else {
+      eststep <- estimate_fun(tmledata=updatestep, t=t, h=h, kernel=kernel, kernel_cdf = kernel_cdf)
     }
-
-    ED2 <- sapply(eststep$Dstar, function(x) mean(x^2))
-    ED3 <- sapply(eststep$Dstar, function(x) mean(x^3))
-    result <- list(initdata = initdata, Q = eststep$Q, initests = initests, tmleests = eststep$ests,
-        steps = j, coefs = updatestep$coefs,Dstar = eststep$Dstar, ED = ED, ED2 = ED2, ED3 = ED3)
-
-    return(result)
+    
+    ED <- apply(eststep$Dstar,2,mean)
+    sigma <- apply(eststep$Dstar,2,sd)
+    # cat(sprintf('ED_psi=%e ED_sigma=%e psi=%f sigma2=%f\n coef_h=%f coef_Cy=%f
+    # coef_Cg=%f\n',ED[1],ED[2],eststep$ests[1],sigma2=eststep$ests[2],updatestep$coefs[1],updatestep$coefs[2],updatestep$coefs[3]))
+    
+    if (all(abs(ED) < sigma*order)) {
+      converge <- T
+      break
+    }
+  }
+  
+  ED2 <- apply(eststep$Dstar, 2, FUN = function(x) mean(x^2))
+  result <- list(initdata = initdata, Q = eststep$Q, initests = initests, tmleests = eststep$ests,
+                 steps = j, coefs = updatestep$coefs,Dstar = eststep$Dstar, ED = ED, ED2 = ED2)
+  
+  return(result)
 }
 
 

@@ -2,74 +2,53 @@
 # library(plyr)
 # library(dplyr)
 # library(SuperLearner)
-
+library(ggplot2)
+library(cowplot)
+library(parallel)
 # playing with integrating functions
 kernel_list = list(f2 = function(x) (1/sqrt(2*pi))*exp(-x^2/2),
                    f4 = function(x) (1/sqrt(2*pi))*exp(-x^2/2)*(1.5-x^2/2),
                    f6 = function(x) (1/8)*(1/sqrt(2*pi))*exp(-x^2/2)*(15-10*x^2+x^4),
-                   f8 = function(x) (1/48)*(1/sqrt(2*pi))*exp(-x^2/2)*(105-105*x^2+21*x^4-x^6))
+                   f8 = function(x) (1/48)*(1/sqrt(2*pi))*exp(-x^2/2)*(105-105*x^2+21*x^4-x^6),
+                   U = function(x) .5*as.numeric(-1<=x&1>=x),
+                   UU = function(x) (1-x^2)*as.numeric(-1<=x&x<=1)*.75)
+
+
+      
 
 # integrate to 1?
-lapply(kernel_list, FUN = function(x) {
-  integrate(x, lower = -100, upper = 100, subdivisions = 10000)$value
+areas = lapply(kernel_list, FUN = function(x) {
+  integrate(x, lower = -Inf, upper = Inf, subdivisions = 10000)$value
 } )
 
-# generate_plots
+areas
 
+# generate_plots
+test = integrate(kernel_list[[6]], -Inf, Inf, subdivisions = 10000)
+test
 plot_kernels = lapply(kernel_list, FUN = function(x) {
   s = seq(-5,5,.001)
   y = x(s)
   plot = qplot(x=s,y=y)+geom_line()
   return(plot)
 })
-plot_kernels[[4]]
+plot_kernels[[5]]
 
 # check orthogonality
 
+test_fcn = function(x) x^2*kernel_list[[4]](x)
+int2 = integrate(test_fcn, lower = -Inf, upper = Inf,subdivisions = 10000)
+int2$abs.error
+int2$value
 
-ff2 = function(x) x^2*kernel_list[[4]](x)
-int2 = integrate(ff2, lower = -10, upper = 10, subdivisions = 10000)$value
-int2
+xx = seq(-5,5,length.out = 100)
+yy = test_fcn(xx)
+plot(xx,yy)
 
-ff6 = function(x) kernel_list[[4]](x)*x^6
-int6 = integrate(ff6, lower = -10, upper = 10, subdivisions = 10000)$value
-int6
-
-chebs = chebyshev.u.polynomials(10, normalized=TRUE)
-chebs
-polyL =  legendre.polynomials(10,normalized=TRUE)
-polyL
-
-g6 = function(x) (x^6-(126/99)*x^4+(35/99)*x^2)*10395/128
-g4 =function(x) (105/8)*((5/7)*x^2-x^4)
-ff = function(x) UU(x)*x^2
-g2 = function(x) 1.5*x^2
-integrate(ff, lower =-1, upper = 1, subdivisions = 1000)$value
-
-x=seq(-1,1,.01)
-plot(x,g4(x))
-
-poly = chebyshev.c.polynomials(3, normalized=FALSE)
-
-chebyshev.c.inner.products(2)
-
-ff = function(x) poly[[4]]
-ff(222)
-
-x=seq(-1,1,.001)
-plot(x,f2(x))
-
-dnorm(.2)/(pnorm(1)-pnorm(-1))
-f2(.2)
-
-U = function(x) .5*as.numeric(-1<=x&1>=x)
-
-UU = function(x) (1-x^2)*as.numeric(-1<x&x<1)*.75
-
-UU(-1)
-
-
-
+ff6 = function(x) kernel_list[[4]](x)*x^4
+int6 = integrate(ff6, lower = -10, upper = 10, subdivisions = 10000)
+int6$abs.error
+int6$value
 
 g0=function(W1,W2,W3,W4) {plogis(-.8*W1+.39*W2+.08*W3-.12*W4-.15)}
 # g0=function(W1,W2,W3,W4) {plogis(-.28*W1+1*W2+.08*W3-.12*W4-1)}
@@ -97,48 +76,102 @@ gentmledata = function(n) {
   data1 = data
   data1$A = 1
   newX = rbind(data,data1,data0)
-
+  
   fitQ = glm(Y~A*W1+A*W2+W3+W4,data=data, family = "binomial")
   Q0W = predict(fitQ,newdata = data0, type = 'response')
   Q1W = predict(fitQ, newdata = data1, type = 'response')
   QAW = predict(fitQ, newdata = data, type= 'response')
-
+  
   Q = cbind(QAW, Q0W, Q1W)
   datag = data
   datag$Y = NULL
   fitg = glm(A~., data=datag, family='binomial')
   g1W = predict(fitg, type = 'response')
-
+  
   tmledata = list(Q=Q,Y=data$Y,A=data$A,g1W=g1W)
-  return(tmledata)}
-
-# undebug(blipdist_update)
-# undebug(blipdist_estimate)
-# undebug(gentmle_alt1)
-
-get.zscore = function(Dstar, alpha) {
-
-  if (ncol(Dstar)==1) return(1.96544) else{
-  sigma = cor(Dstar)
-  means = rep(0,ncol(sigma))
-  zs = rmvnorm(n=2000000,mean= means, sigma=sigma, method= "chol")
-  zabs = apply(zs,1,FUN = function(x) max(abs(x)))
-  zscore = quantile(zabs, probs = 1-alpha)
-  return(zscore)}
+  return(tmledata)
 }
 
-n=10000
-tmledata=gentmledata(n)
-kernel = UU
-
-# t=c(-.3,0,.3,.6)
-h=.1
+# make a grid of true parameters
+true = gendata.blip(1000000)
+hist(true$blip, breaks=200)
+h = c(.05,.1,.15,.2,.25, .3)
 t=c(-.3,-.2,-.1,0,.1,.2,.3,.4,.5,.6,.7)
-# t=.4
-ff= gentmle_alt1(initdata=tmledata, estimate_fun = blipdist_estimate,
-             update_fun = blipdist_update,max_iter = 1000, t=t, h=h,
-             kernel = U)
+# kernel_truth3D = mclapply(1:4, FUN = function(k) {
+#   truth = vapply(h, FUN = function(hi) {
+#     vapply(t, FUN = function(x0){
+#       ests = lapply(true$blip, FUN = function(bW) {
+#         
+#         i = integrate(kernel_list[[k]], -Inf, (bW-x0)/hi, subdivisions = 10000)$value
+#         return(i)
+#         })
+#       mean(unlist(ests))
+#     }, FUN.VALUE=1)
+#   }, FUN.VALUE = rep(1,length(t)))
+#   return(truth)
+# })
+# 
+# truth_unif = vapply(h, FUN = function(hi) {
+#   vapply(t, FUN = function(x0){
+#       i = ((true$blip-x0)/hi>=-1)*(pmin((true$blip-x0)/hi,1)+1)/2
+#       mean(i)
+#   }, FUN.VALUE=1)
+# }, FUN.VALUE = rep(1,length(t)))
+# 
+# truth_unif
+# 
+# kernel_truth3D[[5]] = truth_unif
+#   
+# save(kernel_truth3D, file = "kernel_truth3D.RData")
 
+kernel_names = c(paste0("k", c(2,4,6,8)),"unif")
+plot_df = as.data.frame(do.call(rbind, kernel_truth3D))
+colnames(plot_df) = paste0("h",h)
+truth = vapply(t, FUN = function(x) mean(true$blip>x), FUN.VALUE = 1)
+truth_rep = data.frame(truth, truth, truth, truth, truth, truth)
+colnames(truth_rep) = colnames(plot_df)
+plot_df = rbind(plot_df, truth_rep)
+plot_df$names = c(unlist(lapply(kernel_names, FUN = function(x) rep(x,11))), rep("truth", 11))
+plot_df$t = rep(t,6)
+plot_df
+
+p.05 = ggplot(plot_df, aes(x = t, y = h0.05, color = names)) + geom_line()
+p.10 = ggplot(plot_df, aes(x = t, y = h0.1, color = names)) + geom_line()
+p.15 = ggplot(plot_df, aes(x = t, y = h0.15, color = names)) + geom_line()
+p.20 = ggplot(plot_df, aes(x = t, y = h0.2, color = names)) + geom_line()
+p.25 = ggplot(plot_df, aes(x = t, y = h0.25, color = names)) + geom_line()
+p.30 = ggplot(plot_df, aes(x = t, y = h0.3, color = names)) + geom_line()
+
+p.05
+p.10
+p.15
+p.20
+p.25
+p.30
+
+n=2000
+tmledata=gentmledata(n)
+
+m = 1
+x_seq = seq(-5,5, length.out = 1000) 
+y = vapply(x_seq, FUN = function(x) integrate(kernel_list[[m]], -5, x, subdivisions = 10000)$value, 
+           FUN.VALUE = 1)
+kernel_cdf = list()
+kernel_cdf$x = x_seq
+kernel_cdf$y = y
+
+time = proc.time()
+ff= gentmle_alt1(initdata=tmledata, estimate_fun = blipdist_estimate2,
+             update_fun = blipdist_update,max_iter = 1000, t=t, h=h,
+             kernel = kernel_list[[m]], kernel_cdf = kernel_cdf)
+proc.time() - time
+ff$steps
+ff$ED2/n
+ff$ED
+
+# debug(gentmle_alt1)
+# debug(blipdist_estimate2)
+# debug(blipdist_update)
 zscore = get.zscore(Dstar = ff$Dstar, .05)
 zscore
 
@@ -147,32 +180,21 @@ pm
 
 whole.curve = ff$tmleests
 whole.curve
-
-true = gendata.blip(1000000)
-hist(true$blip, breaks=200)
-truth_h = vapply(t, FUN = function(x0){
-  truth = vapply(true$blip, FUN = function(x) {
-    i = .5*(x>(x0-h))*(min(x,x0+h)-x0+h)/h
-    # upper = (min(x, (x0+h))-x0)/h
-    # lower = -1
-    # i=(pnorm(upper)-pnorm(lower))*(x>x0-h)/(pnorm(1)-pnorm(-1))
-    return(i)}, FUN.VALUE = 1)
-  pt = mean(truth)
-  return(pt)
-}, FUN.VALUE=1)
-
-truth = vapply(t, FUN = function(x) {
-  mean(true$blip>x)
-}, FUN.VALUE = 1)
+init.whole.curve = ff$initests
 
 
-df = data.frame(t = rep(t,3),
-                left = rep(whole.curve-pm,3),
-                right = rep(whole.curve + pm, 3),
-                truth = c(whole.curve,truth_h,truth),
-                type = c(rep("est", length(t)),rep("smoothed",length(t)), rep("true", length(t))))
+df = data.frame(t = rep(t,4),
+                left = rep(whole.curve-pm,4),
+                right = rep(whole.curve + pm, 4),
+                truth = c(whole.curve,truth_h,truth, init.whole.curve),
+                type = c(rep("est", length(t)),
+                         rep("smoothed",length(t)), 
+                         rep("true", length(t)),
+                         rep("init", length(t))
+                         )
+                )
 
-df
+# df
 surv_est = ggplot(data = df, aes(x=t,y=truth, color = type)) + geom_line()+
   geom_ribbon(data=df,aes(ymax=right,ymin=left),
               fill="gray",colour=NA,alpha=0.5)+labs(y = "S(t)")+
