@@ -29,7 +29,7 @@ logit_fluctuate <- function(tmledata, flucmod, truncate = 0) {
 #'
 #' @export
 gentmle_alt1 <- function(initdata, estimate_fun, update_fun, max_iter = 100, N=NULL,
-                         t,h, k, kernel_cdf=NULL, ...) {
+                         t,h, k, ...) {
   
   # create the kernel according to specs
   R = k$range

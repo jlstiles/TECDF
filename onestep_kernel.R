@@ -126,7 +126,7 @@ gentmledata = function(n) {
 # make a grid of true parameters
 true = gendata.blip(1000000)
 hist(true$blip, breaks=200)
-h = c(.01,.02,.05,.1,.15,.2,.25, .3)
+h_vec = seq(.01, 0.3, by = .01)
 t=c(-.3,-.2,-.1,0,.1,.2,.3,.4,.5,.6,.7)
 
 truth = vapply(t, FUN = function(x) mean(true$blip>x), FUN.VALUE = 1)
@@ -148,33 +148,35 @@ p.30
 
 # note: k is a list with elts, degree and range for polyn kernel and kernel cdf construction
 ff= gentmle_alt1(initdata=tmledata, estimate_fun = blipdist_estimate2,
-                 update_fun = blipdist_update,max_iter = 1000, t=t, h=h[hind],
+                 update_fun = blipdist_update,max_iter = 1000, t=t, h=h[4],
                  k = k)
 
 ff$steps
 ff$initests
 ff$tmleests
 
-n=5000
+n=1000
 tmledata=gentmledata(n)
 
 k = list()
 k$degree = NULL
 k$range = 1
-hind = 3
-
-res = kernel_plot(t = t, h = h, k = k, hind = hind, truth = truth, n = n, tmledata = tmledata)
+h = h_vec[15]
+h
+res = kernel_plot(t = t, h = h, k = k, truth = truth, n = n, tmledata = tmledata)
 res$steps
 res$info
 res$plot
 
 # debug(gentmle_alt1)
 # debug(blipdist_estimate2)
-kernel_plot = function(t, h, k, hind, truth, n, tmledata = NULL) {
+# undebug(kernel_plot)
+
+kernel_plot = function(t, h, k,truth, n, tmledata = NULL) {
   if (is.null(tmledata)) tmledata=gentmledata(n)
 
   ff= gentmle_alt1(initdata=tmledata, estimate_fun = blipdist_estimate2,
-                   update_fun = blipdist_update,max_iter = 1000, t=t, h=h[hind],
+                   update_fun = blipdist_update,max_iter = 1000, t=t, h=h,
                    k = k)
   
   zscore = get.zscore(Dstar = ff$Dstar, .05)
@@ -199,14 +201,14 @@ kernel_plot = function(t, h, k, hind, truth, n, tmledata = NULL) {
   if (is.null(k$deg)) {
     kern_name = paste0("unif[" , -k$range, ", ", k$range, "]")
   } else {
-    kern_name = paste0("deg" , k$degree, ", range = ", k$range)
+    kern_name = paste0("deg " , k$degree, ", range = ", k$range)
   }
   surv_est = ggplot(data = df, aes(x=t,y=true, color = type)) + geom_line()+
     scale_x_continuous(breaks = t)+
     geom_ribbon(data=df,aes(ymax=right,ymin=left),
                 fill="gray",colour=NA,alpha=0.5)+labs(y = "S(t)")+
     ggtitle(paste0("estimating CATE ", "'survival'", " curve"),
-            subtitle = paste0("bandwidth = ", h[hind], " n = ",n, " kernel: ", kern_name))
+            subtitle = paste0("bandwidth = ", h, " n = ",n, " kernel: ", kern_name))
   
   capt = "S(t) = prob CATE exceeds t."
   surv_est=ggdraw(add_sub(surv_est,capt, x= 0, y = 0.8, hjust = 0, vjust = 0.5,
