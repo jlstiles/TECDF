@@ -5,7 +5,7 @@
 \title{gentmle}
 \usage{
 gentmle_alt1(initdata, estimate_fun, update_fun, max_iter = 100, N = NULL,
-  t, h, kernel, kernel_cdf = NULL, ...)
+  t, h, k, kernel_cdf = NULL, ...)
 }
 \arguments{
 \item{estimate_fun}{Function for estimation step}

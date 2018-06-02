@@ -29,16 +29,44 @@ logit_fluctuate <- function(tmledata, flucmod, truncate = 0) {
 #'
 #' @export
 gentmle_alt1 <- function(initdata, estimate_fun, update_fun, max_iter = 100, N=NULL,
-                         t,h, kernel, kernel_cdf=NULL, ...) {
+                         t,h, k, kernel_cdf=NULL, ...) {
   
+  # create the kernel according to specs
+  R = k$range
+  
+  if (is.null(k$degree)) {
+    kernel = list(kern = function(x, R, veck) .5*as.numeric(-1<=x&1>=x), 
+    kern_cdf = function(x, R, veck) (1/(2*R))*as.numeric(x > -R)*(pmin(x ,R) + R))
+    veck = 1
+  } else {
+    deg = k$degree
+    mm = vapply(seq(1,deg,2), FUN = function(r) {
+      vapply(seq(r,(r+deg+1),2), FUN = function(x) 2*R^x, FUN.VALUE = 1)/seq(r,(r+deg+1),2)
+    }, FUN.VALUE = rep(1,(deg+3)/2))
+    
+    mm = cbind(mm, vapply(seq(0,deg+1,2), FUN = function(x) R^x, FUN.VALUE = 1)) 
+    mm = t(mm)
+    mm_inv = solve(mm)
+    veck = mm_inv %*% c(1,rep(0, (deg+1)/2))
+    kernel = list(kern = function(x, R, veck) {
+      ll = lapply(1:length(veck), FUN = function(c) veck[c]*x^(2*c-2))
+      w = Reduce("+", ll)*(x > -R & x < R)
+      return(w)
+    }, 
+    kern_cdf = function(x, R, veck) {
+      u = pmin(x, R)
+      ll = lapply(1:length(veck), FUN = function(c) veck[c]*(u^(2*c-1) + R^(2*c-1))/(2*c-1))
+      w = Reduce("+", ll)*as.numeric(x > -R)
+      return(w)
+    })
+  }
+  kernel$R = R
+  kernel$veck = veck
   converge <- F
   n=length(initdata$Y)
   # cat(sprintf('bw: %f\n',bw))
-  if (is.null(kernel_cdf)) {
-    eststep <- estimate_fun(tmledata=initdata, t=t, h=h, kernel=kernel)
-  } else {
-    eststep <- estimate_fun(tmledata=initdata, t=t, h=h, kernel=kernel, kernel_cdf = kernel_cdf)
-  }
+  eststep <- estimate_fun(tmledata=initdata, t=t, h=h, kernel=kernel)
+
   
   initests <- eststep$ests
   if (is.null(N)) N=n
@@ -51,11 +79,8 @@ gentmle_alt1 <- function(initdata, estimate_fun, update_fun, max_iter = 100, N=N
     #         ED <- sapply(eststep$Dstar, mean)
     #         break}
     updatestep <- update_fun(tmledata=eststep)
-    if (is.null(kernel_cdf)) {
-      eststep <- estimate_fun(tmledata=updatestep, t=t, h=h, kernel=kernel)
-    } else {
-      eststep <- estimate_fun(tmledata=updatestep, t=t, h=h, kernel=kernel, kernel_cdf = kernel_cdf)
-    }
+    eststep <- estimate_fun(tmledata=updatestep, t=t, h=h, kernel=kernel)
+    
     
     ED <- apply(eststep$Dstar,2,mean)
     sigma <- apply(eststep$Dstar,2,sd)

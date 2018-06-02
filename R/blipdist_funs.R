@@ -91,18 +91,13 @@ blipdist_estimate1 <- function(tmledata, t, h, kernel, ...) {
 
 
 #' @export
-blipdist_estimate2 <- function(tmledata, t, h, kernel, kernel_cdf, ...) {
+blipdist_estimate2 <- function(tmledata, t, h, kernel) {
   nn <- length(tmledata$Y)
   B = tmledata$Q[,"Q1W"]-tmledata$Q[,"Q0W"]
   
   int = vapply(t, FUN = function(x0) {
-    
-    w = vapply(B, FUN = function(blip) {
-      aa = abs(kernel_cdf$x - (blip-x0)/h)
-      ind = which.min(aa)
-      return(kernel_cdf$y[ind])
-    }, FUN.VALUE = 1)
-    return(w)
+      w = kernel$kern_cdf((B - x0)/h, kernel$R, kernel$veck)
+      return(w)
   } ,FUN.VALUE=rep(1,nn))
   tmledata$ests = apply(int, 2, mean)
   
@@ -110,13 +105,13 @@ blipdist_estimate2 <- function(tmledata, t, h, kernel, kernel_cdf, ...) {
   g1W = tmledata$g1W
   
   tmledata$HAW = vapply(t, FUN = function(x) {
-    (1/h)*(kernel((B-x)/h))*(A/g1W-(1-A)/(1-g1W))
+    (1/h)*(kernel$kern((B-x)/h, kernel$R, kernel$veck))*(A/g1W-(1-A)/(1-g1W))
   } ,FUN.VALUE= rep(1,nn))
   tmledata$H0W = vapply(t, FUN = function(x) {
-    (1/h)*(kernel((B-x)/h))*(-1/(1-g1W))
+    (1/h)*(kernel$kern((B-x)/h, kernel$R, kernel$veck))*(-1/(1-g1W))
   }, FUN.VALUE= rep(1,nn))
   tmledata$H1W = vapply(t, FUN = function(x) {
-    (1/h)*(kernel((B-x)/h))/g1W
+    (1/h)*(kernel$kern((B-x)/h, kernel$R, kernel$veck))/g1W
   }, FUN.VALUE= rep(1,nn))
   HAW = tmledata$HAW
   psi = tmledata$ests

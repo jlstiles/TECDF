@@ -6,15 +6,45 @@ library(ggplot2)
 library(cowplot)
 library(parallel)
 # playing with integrating functions
-kernel_list = list(f2 = function(x) (1/sqrt(2*pi))*exp(-x^2/2),
-                   f4 = function(x) (1/sqrt(2*pi))*exp(-x^2/2)*(1.5-x^2/2),
-                   f6 = function(x) (1/8)*(1/sqrt(2*pi))*exp(-x^2/2)*(15-10*x^2+x^4),
-                   f8 = function(x) (1/48)*(1/sqrt(2*pi))*exp(-x^2/2)*(105-105*x^2+21*x^4-x^6),
-                   U = function(x) .5*as.numeric(-1<=x&1>=x),
-                   UU = function(x) (1-x^2)*as.numeric(-1<=x&x<=1)*.75)
+kernel_list = list(gaus2 = function(x) (1/sqrt(2*pi))*exp(-x^2/2),
+                   gaus4 = function(x) (1/sqrt(2*pi))*exp(-x^2/2)*(1.5-x^2/2),
+                   gaus6 = function(x) (1/8)*(1/sqrt(2*pi))*exp(-x^2/2)*(15-10*x^2+x^4),
+                   gaus8 = function(x) (1/48)*(1/sqrt(2*pi))*exp(-x^2/2)*(105-105*x^2+21*x^4-x^6),
+                   Unif = function(x) .5*as.numeric(-1<=x&1>=x),
+                   fourth = function(x) (0.7031250 - 0.5859375*x^2 + 0.1025391*x^4)*as.numeric(-2<=x&x<=2),
+                   sixth = function(x) (0.683593750 - 0.531684028*x^2 + 
+                                          0.106336806*x^4 - 0.006188915*x^6)*as.numeric(-3<=x&x<=3),
+                   eighth = function(x) (0.897216797 - 1.196289063*x^2 + 0.438639323*x^4 - 
+                                           0.060341917*x^6 + 0.002793607*x^8)*as.numeric(-3<=x&x<=3),
+                   tenth = function(x) (veck[1] + veck[2]*x^2 + veck[3]*x^4 + 
+                                          veck[4]*x^6 + veck[5]*x^8 + veck[6]*x^10)
+                   *as.numeric(-3.5<=x&x<=3.5)
+                   
+                     
+)
+
+# The gaussian kernels are useless here, take a while to integrate and 
+# then there's round off error so I choose explicit integrals, which is lightning fas
+# and such kernels are formulaic to construct as per below--see tenth above
+
+deg = 9
+R = 3.5
+mm = vapply(seq(1,deg,2), FUN = function(r) {
+  vapply(seq(r,(r+deg+1),2), FUN = function(x) 2*R^x, FUN.VALUE = 1)/seq(r,(r+deg+1),2)
+}, FUN.VALUE = rep(1,(deg+3)/2))
+
+mm = cbind(mm, vapply(seq(0,deg+1,2), FUN = function(x) R^x, FUN.VALUE = 1)) 
+mm = t(mm)
+mm_inv = solve(mm)
+veck = mm_inv %*% c(1,rep(0, (deg + 1)/2))
+veck
+
+unif_cdf = function(x) .5*as.numeric(x > -1)*(pmin(x ,1) + 1)
 
 
-      
+F0 = list(unif_cdf = unif_cdf, fourth_cdf = fourth_cdf, 
+          sixth_cdf = sixth_cdf, eighth_cdf = eighth_cdf, tenth_cdf) 
+
 
 # integrate to 1?
 areas = lapply(kernel_list, FUN = function(x) {
@@ -24,24 +54,25 @@ areas = lapply(kernel_list, FUN = function(x) {
 areas
 
 # generate_plots
-test = integrate(kernel_list[[6]], -Inf, Inf, subdivisions = 10000)
+test = integrate(kernel_list[[9]], -3.5, 3.5, subdivisions = 10000)
 test
+
 plot_kernels = lapply(kernel_list, FUN = function(x) {
-  s = seq(-5,5,.001)
+  s = seq(-3.5,3.5,.001)
   y = x(s)
   plot = qplot(x=s,y=y)+geom_line()
   return(plot)
 })
-plot_kernels[[5]]
+plot_kernels[[9]]
 
 # check orthogonality
 
-test_fcn = function(x) x^2*kernel_list[[4]](x)
-int2 = integrate(test_fcn, lower = -Inf, upper = Inf,subdivisions = 10000)
+test_fcn = function(x) (x^2)*kernel_list$tenth(x)
+int2 = integrate(test_fcn, lower = -3.5, upper = 3.5,subdivisions = 10000)
 int2$abs.error
 int2$value
 
-xx = seq(-5,5,length.out = 100)
+xx = seq(-10,10,length.out = 100)
 yy = test_fcn(xx)
 plot(xx,yy)
 
@@ -95,45 +126,11 @@ gentmledata = function(n) {
 # make a grid of true parameters
 true = gendata.blip(1000000)
 hist(true$blip, breaks=200)
-h = c(.05,.1,.15,.2,.25, .3)
+h = c(.01,.02,.05,.1,.15,.2,.25, .3)
 t=c(-.3,-.2,-.1,0,.1,.2,.3,.4,.5,.6,.7)
-# kernel_truth3D = mclapply(1:4, FUN = function(k) {
-#   truth = vapply(h, FUN = function(hi) {
-#     vapply(t, FUN = function(x0){
-#       ests = lapply(true$blip, FUN = function(bW) {
-#         
-#         i = integrate(kernel_list[[k]], -Inf, (bW-x0)/hi, subdivisions = 10000)$value
-#         return(i)
-#         })
-#       mean(unlist(ests))
-#     }, FUN.VALUE=1)
-#   }, FUN.VALUE = rep(1,length(t)))
-#   return(truth)
-# })
-# 
-# truth_unif = vapply(h, FUN = function(hi) {
-#   vapply(t, FUN = function(x0){
-#       i = ((true$blip-x0)/hi>=-1)*(pmin((true$blip-x0)/hi,1)+1)/2
-#       mean(i)
-#   }, FUN.VALUE=1)
-# }, FUN.VALUE = rep(1,length(t)))
-# 
-# truth_unif
-# 
-# kernel_truth3D[[5]] = truth_unif
-#   
-# save(kernel_truth3D, file = "kernel_truth3D.RData")
 
-kernel_names = c(paste0("k", c(2,4,6,8)),"unif")
-plot_df = as.data.frame(do.call(rbind, kernel_truth3D))
-colnames(plot_df) = paste0("h",h)
 truth = vapply(t, FUN = function(x) mean(true$blip>x), FUN.VALUE = 1)
-truth_rep = data.frame(truth, truth, truth, truth, truth, truth)
-colnames(truth_rep) = colnames(plot_df)
-plot_df = rbind(plot_df, truth_rep)
-plot_df$names = c(unlist(lapply(kernel_names, FUN = function(x) rep(x,11))), rep("truth", 11))
-plot_df$t = rep(t,6)
-plot_df
+
 
 p.05 = ggplot(plot_df, aes(x = t, y = h0.05, color = names)) + geom_line()
 p.10 = ggplot(plot_df, aes(x = t, y = h0.1, color = names)) + geom_line()
@@ -149,76 +146,83 @@ p.20
 p.25
 p.30
 
-n=2000
+# note: k is a list with elts, degree and range for polyn kernel and kernel cdf construction
+ff= gentmle_alt1(initdata=tmledata, estimate_fun = blipdist_estimate2,
+                 update_fun = blipdist_update,max_iter = 1000, t=t, h=h[hind],
+                 k = k)
+
+ff$steps
+ff$initests
+ff$tmleests
+
+n=5000
 tmledata=gentmledata(n)
 
-m = 1
-x_seq = seq(-5,5, length.out = 1000) 
-y = vapply(x_seq, FUN = function(x) integrate(kernel_list[[m]], -5, x, subdivisions = 10000)$value, 
-           FUN.VALUE = 1)
-kernel_cdf = list()
-kernel_cdf$x = x_seq
-kernel_cdf$y = y
+k = list()
+k$degree = NULL
+k$range = 1
+hind = 3
 
-time = proc.time()
-ff= gentmle_alt1(initdata=tmledata, estimate_fun = blipdist_estimate2,
-             update_fun = blipdist_update,max_iter = 1000, t=t, h=h,
-             kernel = kernel_list[[m]], kernel_cdf = kernel_cdf)
-proc.time() - time
-ff$steps
-ff$ED2/n
-ff$ED
+res = kernel_plot(t = t, h = h, k = k, hind = hind, truth = truth, n = n, tmledata = tmledata)
+res$steps
+res$info
+res$plot
 
 # debug(gentmle_alt1)
 # debug(blipdist_estimate2)
-# debug(blipdist_update)
-zscore = get.zscore(Dstar = ff$Dstar, .05)
-zscore
+kernel_plot = function(t, h, k, hind, truth, n, tmledata = NULL) {
+  if (is.null(tmledata)) tmledata=gentmledata(n)
 
-pm = zscore*apply(ff$Dstar, 2, sd)*sqrt(n-1)/n
-pm
-
-whole.curve = ff$tmleests
-whole.curve
-init.whole.curve = ff$initests
-
-
-df = data.frame(t = rep(t,4),
-                left = rep(whole.curve-pm,4),
-                right = rep(whole.curve + pm, 4),
-                truth = c(whole.curve,truth_h,truth, init.whole.curve),
-                type = c(rep("est", length(t)),
-                         rep("smoothed",length(t)), 
-                         rep("true", length(t)),
-                         rep("init", length(t))
-                         )
-                )
-
-# df
-surv_est = ggplot(data = df, aes(x=t,y=truth, color = type)) + geom_line()+
-  geom_ribbon(data=df,aes(ymax=right,ymin=left),
-              fill="gray",colour=NA,alpha=0.5)+labs(y = "S(t)")+
-  ggtitle(paste0("estimating CATE ", "'survival'", " curve"),
-          subtitle = "bandwidth = 0.1, Uniform[-1,1] kernel, n = 10000")
-
-capt = paste0("S(t) = prob CATE exceeds t.\n",
-              "'smoothed' means the true parameter for bandwidth 0.1\n",
-              "'true' is the true S(t) and 'est' is the estimate of smoothed parameter\n",
-              "Shaded region represents simultaneous 95% CI to cover the whole curve\n",
-              "both pscore and outcome model were well-specified")
-surv_est=ggdraw(add_sub(surv_est,capt, x= 0, y = 0.8, hjust = 0, vjust = 0.5,
-                     vpadding = grid::unit(1, "lines"), fontfamily = "",
-                     fontface = "plain",colour = "black", size = 12, angle = 0,
-                     lineheight = 0.9))
-surv_est
-
-ggsave("~/Dropbox/Quals/v0321/surv_est.jpg", plot = surv_est,
-       device = NULL, path = NULL, scale = 1, width = NA, height = NA,
-       units = c("in", "cm", "mm"), dpi = 300, limitsize = TRUE)
-
-ff$initests
-ff$steps
-colMeans(ff$Dstar)
+  ff= gentmle_alt1(initdata=tmledata, estimate_fun = blipdist_estimate2,
+                   update_fun = blipdist_update,max_iter = 1000, t=t, h=h[hind],
+                   k = k)
+  
+  zscore = get.zscore(Dstar = ff$Dstar, .05)
+  # zscore
+  
+  pm = zscore*apply(ff$Dstar, 2, sd)*sqrt(n-1)/n
+  
+  whole.curve = ff$tmleests
+  init.whole.curve = ff$initests
+  
+  df = data.frame(t = rep(t,3),
+                  left = rep(whole.curve-pm,3),
+                  right = rep(whole.curve + pm, 3),
+                  true = c(whole.curve,truth, init.whole.curve),
+                  type = c(rep("est", length(t)), 
+                           rep("true", length(t)),
+                           rep("init", length(t))
+                  )
+  )
+  
+  # df
+  if (is.null(k$deg)) {
+    kern_name = paste0("unif[" , -k$range, ", ", k$range, "]")
+  } else {
+    kern_name = paste0("deg" , k$degree, ", range = ", k$range)
+  }
+  surv_est = ggplot(data = df, aes(x=t,y=true, color = type)) + geom_line()+
+    scale_x_continuous(breaks = t)+
+    geom_ribbon(data=df,aes(ymax=right,ymin=left),
+                fill="gray",colour=NA,alpha=0.5)+labs(y = "S(t)")+
+    ggtitle(paste0("estimating CATE ", "'survival'", " curve"),
+            subtitle = paste0("bandwidth = ", h[hind], " n = ",n, " kernel: ", kern_name))
+  
+  capt = "S(t) = prob CATE exceeds t."
+  surv_est=ggdraw(add_sub(surv_est,capt, x= 0, y = 0.8, hjust = 0, vjust = 0.5,
+                          vpadding = grid::unit(1, "lines"), fontfamily = "",
+                          fontface = "plain",colour = "black", size = 12, angle = 0,
+                          lineheight = 0.9))
+  left = df$left[1:length(t)] 
+  right = df$right[1:length(t)]
+  cover = truth <= right & truth >= left
+  info = data.frame(est = whole.curve, left = left, right =right, 
+                    truth = truth,
+                    cover = cover)
+  
+  
+  return(list(info = info, steps = ff$steps, plot = surv_est))
+}
 
 getres = function(t=.5,h=.1,kernel=U,true=.2313561, TG=.240668,n){
   tmledata=gentmledata(n)
