@@ -109,8 +109,8 @@ n=1000
 tmledata=gentmledata(n)
 
 k = list()
-k$degree = 11
-k$range = 5
+k$degree = NULL
+k$range = 1
 h = h_vec[20]
 h
 res = kernel_plot(t = t, h = h, k = k, truth = truth, n = n, tmledata = tmledata)
