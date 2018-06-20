@@ -12,6 +12,8 @@ get.zscore = function(Dstar, alpha) {
 
 #' @export 
 gendata.blip=function(n, d, g0, Q0){
+  # d=1
+  # n=10
   var_names = paste0("W", 1:d)
   W_list = lapply(1:d, FUN = function(i) rnorm(n))
   names(W_list) = var_names
@@ -30,7 +32,9 @@ gendata.blip=function(n, d, g0, Q0){
 }
 
 #' @export 
-gentmledata = function(n, d, g0, Q0) {
+gentmledata = function(n, d, g0, Q0, formu =NULL) {
+  # n=100
+  # d=1
   data = gendata.blip(n, d, g0, Q0)$df
   data0 = data
   data0$A = 0
@@ -38,7 +42,12 @@ gentmledata = function(n, d, g0, Q0) {
   data1$A = 1
   newX = rbind(data,data1,data0)
   
-  fitQ = glm(Y~A*W1+A*W2+W3+W4,data=data, family = "binomial")
+  if (is.null(formu)) {
+  covs = colnames(data)[!colnames(data) %in% c("A","Y")]
+  formu = formula(paste0("Y ~ ", paste0("A*(", paste(covs, "", collapse = "+"), ")")))
+  } else  formu = formu
+  
+  fitQ = glm(formu,data=data, family = "binomial")
   Q0W = predict(fitQ,newdata = data0, type = 'response')
   Q1W = predict(fitQ, newdata = data1, type = 'response')
   QAW = predict(fitQ, newdata = data, type= 'response')
@@ -52,3 +61,129 @@ gentmledata = function(n, d, g0, Q0) {
   tmledata = list(Q=Q,Y=data$Y,A=data$A,g1W=g1W)
   return(tmledata)
 }
+
+#' @export 
+truth.get = function(t, h, k, d, g0, Q0) {
+  # create the kernel according to specs
+  R = k$range
+  
+  if (is.null(k$degree)) {
+    kernel = list(kern = function(x, R, veck) .5*as.numeric(-1<=x&1>=x), 
+                  kern_cdf = function(x, R, veck) (1/(2*R))*as.numeric(x > -R)*(pmin(x ,R) + R))
+    veck = 1
+  } else {
+    deg = k$degree
+    mm = vapply(seq(1,deg,2), FUN = function(r) {
+      vapply(seq(r,(r+deg+1),2), FUN = function(x) 2*R^x, FUN.VALUE = 1)/seq(r,(r+deg+1),2)
+    }, FUN.VALUE = rep(1,(deg+3)/2))
+    
+    mm = cbind(mm, vapply(seq(0,deg+1,2), FUN = function(x) R^x, FUN.VALUE = 1)) 
+    mm = t(mm)
+    mm_inv = solve(mm)
+    veck = mm_inv %*% c(1,rep(0, (deg+1)/2))
+    kernel = list(kern = function(x, R, veck) {
+      ll = lapply(1:length(veck), FUN = function(c) veck[c]*x^(2*c-2))
+      w = Reduce("+", ll)*(x > -R & x < R)
+      return(w)
+    }, 
+    kern_cdf = function(x, R, veck) {
+      u = pmin(x, R)
+      ll = lapply(1:length(veck), FUN = function(c) veck[c]*(u^(2*c-1) + R^(2*c-1))/(2*c-1))
+      w = Reduce("+", ll)*as.numeric(x > -R)
+      return(w)
+    })
+  }
+  kernel$R = R
+  kernel$veck = veck
+  
+  B = gendata.blip(2e6, d, g0, Q0)$blip
+  
+  int = vapply(t, FUN = function(x0) {
+    w = kernel$kern_cdf((B - x0)/h, kernel$R, kernel$veck)
+    return(w)
+  } ,FUN.VALUE=rep(1,2e6))
+  
+  truth_h = apply(int, 2, mean)
+  truth = vapply(t, FUN = function(x0) {
+    tt = mean(B>=x0)
+    return(tt)
+  } ,FUN.VALUE=1)
+  out = list(truth = truth, truth_h = truth_h)
+  return(out)
+}
+
+
+#' @export 
+CATEsurv_plot = function(t, h, k,truth, n, tmledata = NULL) {
+  if (is.null(tmledata)) tmledata=gentmledata(n)
+  if (length(t)>1) simultaneous.inference = TRUE else simultaneous.inference = FALSE
+  ff= gentmle_alt1(initdata=tmledata, estimate_fun = blipdist_estimate2,
+                   update_fun = blipdist_update, max_iter = 1000, t=t, h=h,
+                   k = k, simultaneous.inference = simultaneous.inference)
+
+  ci = ci_gentmle(ff, level = 0.95)
+  whole.curve = ff$tmleests
+  init.whole.curve = ff$initests
+  
+  if (length(t)>1) {
+    df = data.frame(t = rep(t,3),
+                    left = rep(ci[,3],3),
+                    right = rep(ci[,4],3),
+                    true = c(whole.curve,truth, init.whole.curve),
+                    type = c(rep("est", length(t)), 
+                             rep("true", length(t)),
+                             rep("init", length(t))
+                    )
+    )
+    
+    # df
+    if (is.null(k$deg)) {
+      kern_name = paste0("unif[" , -k$range, ", ", k$range, "]")
+    } else {
+      kern_name = paste0("deg " , k$degree, ", range = ", k$range)
+    }
+    surv_est = ggplot2::ggplot(data = df, aes(x=t,y=true, color = type)) + geom_line()+
+      scale_x_continuous(breaks = t)+
+      geom_ribbon(data=df,aes(ymax=right,ymin=left),
+                  fill="gray",colour=NA,alpha=0.5)+labs(y = "S(t)")+
+      ggtitle(paste0("estimating CATE ", "'survival'", " curve"),
+              subtitle = paste0("bandwidth = ", h, " n = ",n, " kernel: ", kern_name))
+    
+    capt = "S(t) = prob CATE exceeds t."
+    surv_est=cowplot::ggdraw(add_sub(surv_est,capt, x= 0, y = 0.8, hjust = 0, vjust = 0.5,
+                            vpadding = grid::unit(1, "lines"), fontfamily = "",
+                            fontface = "plain",colour = "black", size = 12, angle = 0,
+                            lineheight = 0.9))
+    left = df$left[1:length(t)] 
+    right = df$right[1:length(t)]
+    cover = truth <= right & truth >= left
+    info = data.frame(est = whole.curve, left = left, right =right, 
+                      init = init.whole.curve,
+                      truth = truth,
+                      cover = cover)
+    out = list(info = info, steps = ff$steps, plot = surv_est)
+  } else {
+    df = data.frame(t = rep(t,3),
+                    left = rep(ci[,3],3),
+                    right = rep(ci[,4],3),
+                    true = c(whole.curve,truth, init.whole.curve),
+                    type = c(rep("est", length(t)), 
+                             rep("true", length(t)),
+                             rep("init", length(t))
+                    )
+    )
+    
+    left = df$left[1:length(t)] 
+    right = df$right[1:length(t)]
+    cover = truth <= right & truth >= left
+    info = data.frame(est = whole.curve, left = left, right =right, 
+                      init = init.whole.curve,
+                      truth = truth,
+                      cover = cover)
+    out = list(info = info, steps = ff$steps)
+  }
+  
+  
+  return(out)
+}
+

@@ -14,7 +14,8 @@ Imports:
     geepack,
     orthopolynom,
     ggplot2,
-    cowplot
+    cowplot,
+    plyr
 Suggests:
     testthat,
     knitr,

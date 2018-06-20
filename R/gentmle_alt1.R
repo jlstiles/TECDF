@@ -29,14 +29,14 @@ logit_fluctuate <- function(tmledata, flucmod, truncate = 0) {
 #'
 #' @export
 gentmle_alt1 <- function(initdata, estimate_fun, update_fun, max_iter = 100, N=NULL,
-                         t,h, k, ...) {
+                         t,h, k, simultaneous.inference = TRUE, ...) {
   
   # create the kernel according to specs
   R = k$range
   
   if (is.null(k$degree)) {
-    kernel = list(kern = function(x, R, veck) .5*as.numeric(-1<=x&1>=x), 
-    kern_cdf = function(x, R, veck) (1/(2*R))*as.numeric(x > -R)*(pmin(x ,R) + R))
+    kernel = list(kern = function(x, R, veck) 1/(2*R)*as.numeric(-R <= x & R >= x), 
+    kern_cdf = function(x, R, veck) (1/(2*R))*as.numeric(x > -R)*(pmin(x ,R)+R))
     veck = 1
   } else {
     deg = k$degree
@@ -95,7 +95,8 @@ gentmle_alt1 <- function(initdata, estimate_fun, update_fun, max_iter = 100, N=N
   
   ED2 <- apply(eststep$Dstar, 2, FUN = function(x) mean(x^2))
   result <- list(initdata = initdata, Q = eststep$Q, initests = initests, tmleests = eststep$ests,
-                 steps = j, coefs = updatestep$coefs,Dstar = eststep$Dstar, ED = ED, ED2 = ED2)
+                 steps = j, coefs = updatestep$coefs,Dstar = eststep$Dstar, ED = ED, ED2 = ED2,
+                 simultaneous.inference = simultaneous.inference)
   
   return(result)
 }
@@ -103,19 +104,24 @@ gentmle_alt1 <- function(initdata, estimate_fun, update_fun, max_iter = 100, N=N
 
 #' @export
 ci_gentmle <- function(gentmle_obj, level = 0.95) {
-
-    n <- nrow(gentmle_obj$initdata)
-    n_ests <- length(gentmle_obj$tmleests)
-    ldply(seq_len(n_ests), function(i) {
-
-        est <- gentmle_obj$tmleests[i]
-        sd <- sqrt(gentmle_obj$ED2[i])/sqrt(n)
-        z <- (1 + level)/2
-        lower <- est - qnorm(z) * sd
-        upper <- est + qnorm(z) * sd
-        data.frame(parameter = names(est), est = est, sd = sd, lower = lower, upper = upper)
-    })
+  
+  n <- nrow(gentmle_obj$initdata$Q)
+  n_ests <- length(gentmle_obj$tmleests)
+  if (gentmle_obj$simultaneous.inference == TRUE){
+    S = cor(gentmle_obj$Dstar)
+    Z = rmvnorm(1000000, rep(0,ncol(gentmle_obj$Dstar)), S)
+    Z_abs = apply(Z,1,FUN = function(x) max(abs(x)))
+    z = quantile(Z_abs, level)
+  } else {z <- qnorm((1 + level)/2)}
+  plyr::ldply(seq_len(n_ests), function(i) {
+    est <- gentmle_obj$tmleests[i]
+    se <- sqrt(gentmle_obj$ED2[i])/sqrt(n)
+    lower <- est - z * se
+    upper <- est + z * se
+    data.frame(est = est, se = se, lower = lower, upper = upper)
+  })
 }
+
 
 #' @export
 print.gentmle <- function(gentmle_obj) {

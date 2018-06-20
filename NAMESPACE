@@ -2,6 +2,7 @@
 
 S3method(print,gentmle)
 S3method(print,gentmle1)
+export(CATEsurv_plot)
 export(blipdist_estimate)
 export(blipdist_estimate1)
 export(blipdist_estimate2)
@@ -37,3 +38,4 @@ export(sigmaATE_update)
 export(sigma_estimate)
 export(sigma_update)
 export(truncate)
+export(truth.get)
