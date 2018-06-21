@@ -25,8 +25,10 @@ M = max(true$blip)
 # function start here
 ##
 ##
-
+ii = 0
 for (n in c(100, 250, 500, 1000, 2500, 5000, 10000, 50000)) {
+  ii = ii + 1
+  print(ii)
   h_vec = seq(.01, 0.4, by = .01)
   t = seq(m, M, .01)
   ideal = n^-.2
