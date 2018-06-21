@@ -50,9 +50,8 @@ for (n in c(10000, 50000)) {
     res = CATEsurv_plot(t = t, h = h, k = k, truth = truth, n = n, tmledata = tmledata)
     return(res$info)
   }
-
-  if (ii >= 6) cc = 12 else cc = detectCores()
-  cl = makeCluster(cc, type = "SOCK")
+  
+  cl = makeCluster(8, type = "SOCK")
   registerDoSNOW(cl)
   blip = seq(13,28,5)
   B=5000
@@ -114,7 +113,7 @@ for (n in c(10000, 50000)) {
                                               true_df = true_df,
                                               plot_true = gg_true))
 
-  cl = makeCluster(cc, type = "SOCK")
+  cl = makeCluster(8, type = "SOCK")
   registerDoSNOW(cl)
   blip = seq(13,28,5)
   
