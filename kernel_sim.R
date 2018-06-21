@@ -181,4 +181,3 @@ save(res100unif13, res100unif18, res100unif23, res100unif28,
      res2500unif_simul, res5000unif_simul, res10000unif_simul, res50000unif_simul,
      g0, Q0, file = "kernel_sim_unif.RData")
 
-100, 250, 500, 1000, 2500, 5000, 10000, 50000
