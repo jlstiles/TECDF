@@ -51,7 +51,7 @@ for (n in c(100, 250, 500, 1000, 2500, 5000, 10000, 50000)) {
     return(res$info)
   }
 
-  if (ii >= 6) cc = 12 else cc = detectCores
+  if (ii >= 6) cc = 12 else cc = detectCores()
   cl = makeCluster(cc, type = "SOCK")
   registerDoSNOW(cl)
   blip = seq(13,28,5)
