@@ -52,7 +52,7 @@ for (n in c(100, 250, 500, 1000, 2500, 5000, 10000, 50000)) {
   cl = makeCluster(detectCores(), type = "SOCK")
   registerDoSNOW(cl)
   blip = seq(13,28,5)
-  
+  B=5000
   allresults=foreach(i=1:B,
                      .packages=c("cateSurvival","mvtnorm","ggplot2", "cowplot")
                      ,.errorhandling='remove'
