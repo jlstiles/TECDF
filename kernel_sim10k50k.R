@@ -26,7 +26,7 @@ M = max(true$blip)
 ##
 ##
 ii = 0
-for (n in c(100, 250, 500, 1000, 2500, 5000)) {
+for (n in c(10000, 50000)) {
   ii = ii + 1
   print(ii)
   h_vec = seq(.01, 0.4, by = .01)
@@ -51,7 +51,8 @@ for (n in c(100, 250, 500, 1000, 2500, 5000)) {
     return(res$info)
   }
 
-  cl = makeCluster(detectCores(), type = "SOCK")
+  if (ii >= 6) cc = 12 else cc = detectCores()
+  cl = makeCluster(cc, type = "SOCK")
   registerDoSNOW(cl)
   blip = seq(13,28,5)
   B=5000
@@ -113,7 +114,7 @@ for (n in c(100, 250, 500, 1000, 2500, 5000)) {
                                               true_df = true_df,
                                               plot_true = gg_true))
 
-  cl = makeCluster(detectCores(), type = "SOCK")
+  cl = makeCluster(cc, type = "SOCK")
   registerDoSNOW(cl)
   blip = seq(13,28,5)
   
@@ -169,12 +170,7 @@ for (n in c(100, 250, 500, 1000, 2500, 5000)) {
   }
 }
 
-save(res100unif13, res100unif18, res100unif23, res100unif28, 
-     res250unif13, res250unif18, res250unif23, res250unif28,
-     res500unif13, res500unif18, res500unif23, res500unif28,
-     res1000unif13, res1000unif18, res1000unif23, res1000unif28,
-     res2500unif13, res2500unif18, res2500unif23, res2500unif28,
-     res5000unif13, res5000unif18, res5000unif23, res5000unif28,
-     res100unif_simul, res250unif_simul, res500unif_simul, res1000unif_simul,
-     res2500unif_simul, res5000unif_simul,g0, Q0, file = "kernel_sim_unif.RData")
+save(res10000unif13, res10000unif18, res10000unif23, res10000unif28,
+     res50000unif13, res50000unif18, res50000unif23, res50000unif28,
+     res10000unif_simul, res50000unif_simul, g0, Q0, file = "kernel_sim_unif10k50k.RData")
 
