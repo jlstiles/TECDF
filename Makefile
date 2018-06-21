@@ -88,7 +88,7 @@ else
 	${R} $< ${OUTPUT_DIR}/$<.out &
 endif
 
-kernel_sim10k50k: kernel_sim10k50k.R
+kernel_sim_all: kernel_sim_all.R
 ifeq (${JOB_ENGINE},slurm)
 	${SBATCH} --nodes 1 --job-name=$< ${SCRIPT_DIR}/sbatch-r.sh --file=$< --dir=${OUTPUT_DIR}
 else
