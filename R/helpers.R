@@ -32,37 +32,6 @@ gendata.blip=function(n, d, g0, Q0){
 }
 
 #' @export 
-gentmledata = function(n, d, g0, Q0, formu =NULL) {
-  # n=100
-  # d=1
-  data = gendata.blip(n, d, g0, Q0)$df
-  data0 = data
-  data0$A = 0
-  data1 = data
-  data1$A = 1
-  newX = rbind(data,data1,data0)
-  
-  if (is.null(formu)) {
-  covs = colnames(data)[!colnames(data) %in% c("A","Y")]
-  formu = formula(paste0("Y ~ ", paste0("A*(", paste(covs, "", collapse = "+"), ")")))
-  } else  formu = formu
-  
-  fitQ = glm(formu,data=data, family = "binomial")
-  Q0W = predict(fitQ,newdata = data0, type = 'response')
-  Q1W = predict(fitQ, newdata = data1, type = 'response')
-  QAW = predict(fitQ, newdata = data, type= 'response')
-  
-  Q = cbind(QAW, Q0W, Q1W)
-  datag = data
-  datag$Y = NULL
-  fitg = glm(A~., data=datag, family='binomial')
-  g1W = predict(fitg, type = 'response')
-  
-  tmledata = list(Q=Q,Y=data$Y,A=data$A,g1W=g1W)
-  return(tmledata)
-}
-
-#' @export 
 truth.get = function(t, h, k, d, g0, Q0) {
   # create the kernel according to specs
   R = k$range
@@ -114,8 +83,8 @@ truth.get = function(t, h, k, d, g0, Q0) {
 
 
 #' @export 
-CATEsurv_plot = function(t, h, k,truth, n, tmledata = NULL) {
-  if (is.null(tmledata)) tmledata=gentmledata(n)
+CATEsurv_plot = function(t, h, k,truth, n, tmledata = NULL, ...) {
+  if (is.null(tmledata)) tmledata=gentmledata(n=n, d=d, g0=g0, Q0=Q0, formu=formu)
   if (length(t)>1) simultaneous.inference = TRUE else simultaneous.inference = FALSE
   ff= gentmle_alt1(initdata=tmledata, estimate_fun = blipdist_estimate2,
                    update_fun = blipdist_update, max_iter = 1000, t=t, h=h,
@@ -187,3 +156,59 @@ CATEsurv_plot = function(t, h, k,truth, n, tmledata = NULL) {
   return(out)
 }
 
+#' @export 
+gentmledata = function(n, d, g0, Q0, V, formu = NULL) {
+  # n=100
+  # d=1
+  # V=10
+  data = gendata.blip(n, d, g0, Q0)$df
+  data0 = data
+  data0$A = 0
+  data1 = data
+  data1$A = 1
+  datag = data
+  datag$Y = NULL
+  
+  if (is.null(formu)) {
+    covs = colnames(data)[!colnames(data) %in% c("A","Y")]
+    formuQ = formula(paste0("Y ~ ", paste0("A*(", paste(covs, "", collapse = "+"), ")")))
+    formug = formula("A ~.")
+  } else  {
+    formuQ = formu$Q
+    formug = formu$g
+  }
+  
+  if (V == 1) {
+    fitQ = glm(formuQ,data=data, family = "binomial")
+    Q0W = predict(fitQ,newdata = data0, type = 'response')
+    Q1W = predict(fitQ, newdata = data1, type = 'response')
+    QAW = predict(fitQ, newdata = data, type= 'response')
+    
+    Q = cbind(QAW, Q0W, Q1W)
+    datag = data
+    datag$Y = NULL
+    fitg = glm(formug, data=datag, family='binomial')
+    g1W = predict(fitg, type = 'response')
+    
+    tmledata = list(Q=Q,Y=data$Y,A=data$A,g1W=g1W)
+  } else {
+    folds = make_folds(n=n, V=V)
+    fold_preds = lapply(folds, FUN = function(fold) {
+      fitQ = glm(formuQ,data=data[fold$training_set,], family = "binomial")
+      Q0W = predict(fitQ,newdata = data0[fold$validation_set,], type = 'response')
+      Q1W = predict(fitQ, newdata = data1[fold$validation_set,], type = 'response')
+      QAW = predict(fitQ, newdata = data[fold$validation_set,], type= 'response')
+      
+      Q = cbind(QAW, Q0W, Q1W)
+      fitg = glm(formug, data=datag[fold$training_set,], family='binomial')
+      g1W = predict(fitg, newdata = datag[fold$validation_set, ], type = 'response')
+      
+      return(list(Q=Q,Y=data$Y[fold$validation_set],A=data$A[fold$validation_set],g1W=g1W))
+    })
+    tmledata = list(Q = do.call(rbind, lapply(fold_preds, FUN = function(x) x$Q)),
+                    Y = unlist(lapply(fold_preds, FUN = function(x) x$Y)),
+                    A = unlist(lapply(fold_preds, FUN = function(x) x$A)),
+                    g1W = unlist(lapply(fold_preds, FUN = function(x) x$g1W)))
+  }
+  return(tmledata)
+}
