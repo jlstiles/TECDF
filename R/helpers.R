@@ -212,3 +212,80 @@ gentmledata = function(n, d, g0, Q0, V, formu = NULL) {
   }
   return(tmledata)
 }
+
+#' @export 
+gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, ...) {
+
+  data = gendata.blip(n, d, g0, Q0)$df
+  X = data
+  X$Y = NULL
+  Y = data$Y
+  X0 = X
+  X0$A = 0
+  X1 = X
+  X1$A = 1
+  
+  if (V == 1) {
+    # fitQ = glm(formuQ,data=data, family = "binomial")
+    fitQ = fit_hal(X = X, Y = Y, degrees = NULL, fit_type = "glmnet",
+                   n_folds = 10, use_min = TRUE, family = "binomial",
+                   return_lasso = FALSE, yolo = TRUE)
+    Q0W = predict(fitQ, new_data = X0, type = 'response')
+    Q1W = predict(fitQ, new_data = X1, type = 'response')
+    QAW = predict(fitQ, new_data = X, type = 'response')
+    
+    Q = cbind(QAW, Q0W, Q1W)
+    
+    if (RCT) {
+      datag = X
+      fitg = glm(formug, data=datag, family='binomial')
+      g1W = predict(fitg, type = 'response')
+    } else {
+      Xg = X
+      A = Xg$A
+      Xg$A = NULL
+      fitg = fit_hal(X = Xg, Y = A, degrees = NULL, fit_type = "glmnet",
+                     n_folds = 10, use_min = TRUE, family = "binomial",
+                     return_lasso = FALSE, yolo = TRUE)
+      g1W = predict(fitQ, new_data = Xg, type = 'response')
+    }
+    tmledata = list(Q=Q,Y=data$Y,A=data$A,g1W=g1W)
+  } else {
+    folds = make_folds(n=n, V=V)
+    fold_preds = lapply(folds, FUN = function(fold) {
+      fold = folds[[7]]
+      fitQ = fit_hal(X = X[fold$training_set,], Y = Y[fold$training_set], 
+                     degrees = NULL, fit_type = "glmnet",
+                     n_folds = 10, use_min = TRUE, family = "binomial",
+                     return_lasso = FALSE, yolo = TRUE)
+      Q0W = predict(fitQ,new_data = X0[fold$validation_set,], type = 'response')
+      Q1W = predict(fitQ, new_data = X1[fold$validation_set,], type = 'response')
+      QAW = predict(fitQ, new_data = X[fold$validation_set,], type= 'response')
+      
+      Q = cbind(QAW, Q0W, Q1W)
+      
+      if (RCT) {
+        datag = X[fold$training_set,]
+        fitg = glm(formug, data=datag, family='binomial')
+        g1W = predict(fitg, type = 'response')
+      } else {
+        Xg = X[fold$training_set,]
+        A = Xg$A
+        Xg$A = NULL
+        fitg = fit_hal(X = Xg, Y = A, degrees = NULL, fit_type = "glmnet",
+                       n_folds = 10, use_min = TRUE, family = "binomial",
+                       return_lasso = FALSE, yolo = TRUE)
+        g1W = predict(fitQ, new_data = X[fold$validation_set,], type = 'response')
+      }
+      
+      return(list(Q=Q,Y=data$Y[fold$validation_set],A=data$A[fold$validation_set],g1W=g1W))
+    })
+    tmledata = list(Q = do.call(rbind, lapply(fold_preds, FUN = function(x) x$Q)),
+                    Y = unlist(lapply(fold_preds, FUN = function(x) x$Y)),
+                    A = unlist(lapply(fold_preds, FUN = function(x) x$A)),
+                    g1W = unlist(lapply(fold_preds, FUN = function(x) x$g1W)))
+  }
+  return(tmledata)
+}
+
+
