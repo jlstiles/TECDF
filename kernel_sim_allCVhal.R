@@ -100,7 +100,7 @@ for (n in c(100, 250, 500, 1000, 2500, 5000)) {
   for (b in blip) {
     # b = blip[1]
     allresults=foreach(i=1:B,
-                       .packages=c("cateSurvival","mvtnorm","ggplot2", "cowplot")
+                       .packages=c("cateSurvival","mvtnorm","ggplot2", "cowplot", "hal9001")
                        ,.errorhandling='remove'
     )%dopar%
     {getres(n, t[b], bw, k = k, 
