@@ -95,7 +95,7 @@ for (n in c(100, 250, 500, 1000, 2500, 5000)) {
   
   registerDoSNOW(cl)
   blip = seq(13,28,5)
-  B=5000
+  B=1000
   
   for (b in blip) {
     # b = blip[1]
