@@ -214,8 +214,8 @@ gentmledata = function(n, d, g0, Q0, V, formu = NULL) {
 }
 
 #' @export 
-gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, ...) {
-
+gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, formu = NULL) {
+  # prepare inputs for hal
   data = gendata.blip(n, d, g0, Q0)$df
   X = data
   X$Y = NULL
@@ -224,6 +224,16 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, ...) {
   X0$A = 0
   X1 = X
   X1$A = 1
+  
+  # define the formula for glm
+  if (is.null(formu)) {
+    covs = colnames(data)[!colnames(data) %in% c("A","Y")]
+    formuQ = formula(paste0("Y ~ ", paste0("A*(", paste(covs, "", collapse = "+"), ")")))
+    formug = formula("A ~.")
+  } else  {
+    formuQ = formu$Q
+    formug = formu$g
+  }
   
   if (V == 1) {
     # fitQ = glm(formuQ,data=data, family = "binomial")
@@ -236,10 +246,18 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, ...) {
     
     Q = cbind(QAW, Q0W, Q1W)
     
+    fitQ1 = glm(formula = formuQ, data = data, family = 'binomial')
+    Q0W = predict(fitQ1, newdata = X0, type = 'response')
+    Q1W = predict(fitQ1, newdata = X1, type = 'response')
+    QAW = predict(fitQ1, type = 'response')
+    
+    Q1 = cbind(QAW, Q0W, Q1W)
+    
     if (RCT) {
       datag = X
       fitg = glm(formug, data=datag, family='binomial')
       g1W = predict(fitg, type = 'response')
+      g1W1 = g1W
     } else {
       Xg = X
       A = Xg$A
@@ -248,8 +266,12 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, ...) {
                      n_folds = 10, use_min = TRUE, family = "binomial",
                      return_lasso = FALSE, yolo = TRUE)
       g1W = predict(fitQ, new_data = Xg, type = 'response')
+      
+      fitg1 = glm(formula = formug, data = X, family = 'binomial')
+      g1W1 = predict(fitg1, type = 'response')
     }
     tmledata = list(Q=Q,Y=data$Y,A=data$A,g1W=g1W)
+    tmledata1 = list(Q=Q1,Y=data$Y,A=data$A,g1W=g1W1)
   } else {
     folds = make_folds(n=n, V=V)
     fold_preds = lapply(folds, FUN = function(fold) {
@@ -263,10 +285,18 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, ...) {
       
       Q = cbind(QAW, Q0W, Q1W)
       
+      fitQ1 = glm(formula = formuQ, data = data[fold$training_set,], family = 'binomial')
+      Q0W = predict(fitQ1, newdata = X0[fold$validation_set,], type = 'response')
+      Q1W = predict(fitQ1, newdata = X1[fold$validation_set,], type = 'response')
+      QAW = predict(fitQ1, newdata = X[fold$validation_set,], type = 'response')
+      
+      Q1 = cbind(QAW, Q0W, Q1W)
+      
       if (RCT) {
         datag = X[fold$training_set,]
         fitg = glm(formug, data=datag, family='binomial')
         g1W = predict(fitg, type = 'response')
+        g1W1 = g1W
       } else {
         Xg = X[fold$training_set,]
         A = Xg$A
@@ -275,16 +305,25 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, ...) {
                        n_folds = 10, use_min = TRUE, family = "binomial",
                        return_lasso = FALSE, yolo = TRUE)
         g1W = predict(fitQ, new_data = X[fold$validation_set,], type = 'response')
+        
+        fitg1 = glm(formula = formug, data = X[fold$training_set,], family = 'binomial')
+        g1W1 = predict(fitg1, newdata = X[fold$validation_set, ], type = 'response')
       }
       
-      return(list(Q=Q,Y=data$Y[fold$validation_set],A=data$A[fold$validation_set],g1W=g1W))
+      return(list(Q=Q,Y=data$Y[fold$validation_set],A=data$A[fold$validation_set],g1W=g1W,
+                  Q1=Q1,g1W1=g1W1))
     })
     tmledata = list(Q = do.call(rbind, lapply(fold_preds, FUN = function(x) x$Q)),
                     Y = unlist(lapply(fold_preds, FUN = function(x) x$Y)),
                     A = unlist(lapply(fold_preds, FUN = function(x) x$A)),
                     g1W = unlist(lapply(fold_preds, FUN = function(x) x$g1W)))
+    
+    tmledata1 = list(Q = do.call(rbind, lapply(fold_preds, FUN = function(x) x$Q1)),
+                     Y = unlist(lapply(fold_preds, FUN = function(x) x$Y)),
+                     A = unlist(lapply(fold_preds, FUN = function(x) x$A)),
+                     g1W = unlist(lapply(fold_preds, FUN = function(x) x$g1W1)))
   }
-  return(tmledata)
+  return(list(tmledata = tmledata, tmledata1 = tmledata1))
 }
 
 

@@ -95,7 +95,7 @@ else
 	${R} $< ${OUTPUT_DIR}/$<.out &
 endif
 
-kernel_sim_allCVhal: kernel_sim_allCVhal.R
+kernel_sim_allCVhalglm: kernel_sim_allCVhalglm.R
 ifeq (${JOB_ENGINE},slurm)
 	${SBATCH} --nodes 1 --job-name=$< ${SCRIPT_DIR}/sbatch-r.sh --file=$< --dir=${OUTPUT_DIR}
 else
