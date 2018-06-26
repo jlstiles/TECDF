@@ -157,13 +157,13 @@ for (n in c(100, 250, 500, 1000, 2500, 5000)) {
     assign(paste0("res", n, "unifhal", b), list(coverage = coverage_hal, 
                                                    B = B, 
                                                    h = bw, 
-                                                   res = res,
+                                                   res = res_hal,
                                                    blip = t[b]))
     
     assign(paste0("res", n, "unifglm", b), list(coverage = coverage_hal, 
                                              B = B, 
                                              h = bw, 
-                                             res = res,
+                                             res = res_glm,
                                              blip = t[b]))
 
   }
