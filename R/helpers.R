@@ -253,7 +253,6 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, ...) {
   } else {
     folds = make_folds(n=n, V=V)
     fold_preds = lapply(folds, FUN = function(fold) {
-      fold = folds[[7]]
       fitQ = fit_hal(X = X[fold$training_set,], Y = Y[fold$training_set], 
                      degrees = NULL, fit_type = "glmnet",
                      n_folds = 10, use_min = TRUE, family = "binomial",
