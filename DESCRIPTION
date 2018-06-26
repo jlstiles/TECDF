@@ -7,7 +7,8 @@ Maintainer: Jonathan Levy <jlstilesmusic@gmail.com>
 Description: A package to compute TMLE's for various parameters of interest, keeping the books in the process for analysis.
 Depends: R (>= 2.14.0),
     mvtnorm,
-    origami
+    origami,
+    hal9001
 Imports:
     parallel,
     foreach,
