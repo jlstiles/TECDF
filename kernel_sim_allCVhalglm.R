@@ -28,7 +28,7 @@ M = max(true$blip)
 ##
 ##
 ii = 0
-num_draws = 4
+num_draws = 24
 for (n in c(100, 250, 500, 1000, 2500, 5000)) {
   ii = ii + 1
   print(ii)
