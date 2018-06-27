@@ -129,7 +129,7 @@ glmstuff_simul = list(coverage = coverage_glm,
                       riskg = riskg[,2],
                       supnorm = supnorm[,2])
 
-fname = paste0("sim_unifCVhalglm_",rr,"_",n,"_",b,"simul.RData")
+fname = paste0("sim_unifCVhalglm_",rr,"_",n,"_","simul.RData")
 save(halstuff, glmstuff, g0, Q0, file = fname)
   
   if (n >= 10000) {
