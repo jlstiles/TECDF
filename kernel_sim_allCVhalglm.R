@@ -130,7 +130,7 @@ glmstuff_simul = list(coverage = coverage_glm,
                       supnorm = supnorm[,2])
 
 fname = paste0("sim_unifCVhalglm_",rr,"_",n,"_","simul.RData")
-save(halstuff, glmstuff, g0, Q0, file = fname)
+save(halstuff_simul, glmstuff_simul, g0, Q0, file = fname)
   
   if (n >= 10000) {
     cl = makeCluster(8, type = "SOCK")
