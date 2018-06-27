@@ -216,7 +216,10 @@ gentmledata = function(n, d, g0, Q0, V, formu = NULL) {
 #' @export 
 gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, formu = NULL) {
   # prepare inputs for hal
-  data = gendata.blip(n, d, g0, Q0)$df
+  info = gendata.blip(n, d, g0, Q0)
+  data = info$df
+  blip = info$blip
+  
   X = data
   X$Y = NULL
   Y = data$Y
@@ -311,7 +314,7 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, formu = NULL) {
       }
       
       return(list(Q=Q,Y=data$Y[fold$validation_set],A=data$A[fold$validation_set],g1W=g1W,
-                  Q1=Q1,g1W1=g1W1))
+                  Q1=Q1,g1W1=g1W1, inds = fold$validation_set))
     })
     tmledata = list(Q = do.call(rbind, lapply(fold_preds, FUN = function(x) x$Q)),
                     Y = unlist(lapply(fold_preds, FUN = function(x) x$Y)),
@@ -322,8 +325,21 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, formu = NULL) {
                      Y = unlist(lapply(fold_preds, FUN = function(x) x$Y)),
                      A = unlist(lapply(fold_preds, FUN = function(x) x$A)),
                      g1W = unlist(lapply(fold_preds, FUN = function(x) x$g1W1)))
+    risk_hal = mean(with(tmledata, -Y*log(Q[,"QAW"])-(1-Y)*log(1-Q[,"QAW"])))
+    risk_glm = mean(with(tmledata1, -Y*log(Q[,"QAW"])-(1-Y)*log(1-Q[,"QAW"])))
+    risk_halg = mean(with(tmledata, -A*log(g1W)-(1-A)*log(1-g1W)))
+    risk_glmg = mean(with(tmledata1, -A*log(g1W)-(1-A)*log(1-g1W)))
+    
+    supnorm_hal = with(tmledata, max(abs(Q[,"Q1W"] - Q[,"Q0W"] - blip)))
+    supnorm_glm = with(tmledata1, max(abs(Q[,"Q1W"] - Q[,"Q0W"] - blip)))
+    
+    risk = c(risk_hal = risk_hal, risk_glm = risk_glm)
+    riskg = c(risk_hal = risk_halg, risk_glm = risk_glmg)
+    risk = rbind(risk, riskg)
+    
+    supnorm = c(sup_hal = supnorm_hal, sup_glm = supnorm_glm)
   }
-  return(list(tmledata = tmledata, tmledata1 = tmledata1))
+  return(list(tmledata = tmledata, tmledata1 = tmledata1, risk = risk, supnorm = supnorm))
 }
 
 
