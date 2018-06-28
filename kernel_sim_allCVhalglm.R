@@ -28,7 +28,7 @@ M = max(true$blip)
 ##
 ##
 ii = 0
-num_draws = 24
+num_draws = 200
 for (rr in 1:5) {
   n=1000
   ii = ii + 1
