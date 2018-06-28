@@ -17,16 +17,19 @@ blipdist_update <- function(tmledata, Q.trunc = 1e-04) {
   data0$offset <- qlogis(Qtrunc[,"Q0W"])
   
   # qfluc <- glm(Y ~ 1, data = data, offset = offset, weights = H, family='binomial')
-  qfluc <- glm(Y ~ -1 + H, data = data, offset = offset, family='binomial')
+  if (all(H==0)) eps_q = 0 else {
+    qfluc <- glm(Y ~ -1 + H, data = data, offset = offset, family='binomial')
+    eps_q <- qfluc$coef
+    QAW <- predict(qfluc, type = 'response')
+    Q1W <- predict(qfluc, newdata = data1, type = 'response')
+    Q0W <- predict(qfluc, newdata = data0, type = 'response')
+    tmledata$Q = data.frame(QAW=QAW,Q0W=Q0W,Q1W=Q1W)
+  }
   # qfluc <- glm(tmledata$Y ~ -1 + H + offset(qlogis(Qtrunc[,"QAW"])),family='binomial')
-  eps_q <- qfluc$coef
-  QAW <- predict(qfluc, type = 'response')
-  Q1W <- predict(qfluc, newdata = data1, type = 'response')
-  Q0W <- predict(qfluc, newdata = data0, type = 'response')
+
   # QAW <- as.vector(plogis(qlogis(Qtrunc[,"QAW"]) + H*eps_q))
   # Q1W <- as.vector(with(tmledata, plogis(qlogis(Qtrunc[,"Q1W"]) + eps_q*H1W%*%deriv/norm)))
   # Q0W <- as.vector(with(tmledata, plogis(qlogis(Qtrunc[,"Q0W"]) + eps_q*H0W%*%deriv/norm)))
-  tmledata$Q = data.frame(QAW=QAW,Q0W=Q0W,Q1W=Q1W)
   tmledata$coefs = c(eps_q)
   return(tmledata)
 }

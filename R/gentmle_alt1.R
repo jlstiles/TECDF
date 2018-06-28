@@ -87,7 +87,7 @@ gentmle_alt1 <- function(initdata, estimate_fun, update_fun, max_iter = 100, N=N
     # cat(sprintf('ED_psi=%e ED_sigma=%e psi=%f sigma2=%f\n coef_h=%f coef_Cy=%f
     # coef_Cg=%f\n',ED[1],ED[2],eststep$ests[1],sigma2=eststep$ests[2],updatestep$coefs[1],updatestep$coefs[2],updatestep$coefs[3]))
     
-    if (all(abs(ED) < sigma*order)) {
+    if (all(abs(ED) <= sigma*order)) {
       converge <- T
       break
     }
@@ -108,11 +108,21 @@ ci_gentmle <- function(gentmle_obj, level = 0.95) {
   n <- nrow(gentmle_obj$initdata$Q)
   n_ests <- length(gentmle_obj$tmleests)
   if (gentmle_obj$simultaneous.inference == TRUE){
-    S = cor(gentmle_obj$Dstar)
-    Z = rmvnorm(1000000, rep(0,ncol(gentmle_obj$Dstar)), S)
-    Z_abs = apply(Z,1,FUN = function(x) max(abs(x)))
-    z = quantile(Z_abs, level)
-  } else {z <- qnorm((1 + level)/2)}
+    check = apply(gentmle_obj$Dstar, 2, FUN = function(IC) {
+      uu = length(unique(IC))
+      if (uu==1) return(0) else return(1)
+    })
+    if (any(check==0)) {
+      z <- qnorm((1 + level)/2)
+    } else {
+      S = cor(gentmle_obj$Dstar)
+      Z = rmvnorm(1000000, rep(0,ncol(gentmle_obj$Dstar)), S)
+      Z_abs = apply(Z,1,FUN = function(x) max(abs(x)))
+      z = quantile(Z_abs, level)
+    }
+  } else {
+    z <- qnorm((1 + level)/2)
+    }
   plyr::ldply(seq_len(n_ests), function(i) {
     est <- gentmle_obj$tmleests[i]
     se <- sqrt(gentmle_obj$ED2[i])/sqrt(n)
