@@ -129,7 +129,7 @@ for (rr in 1:5) {
                         riskg = riskg[,2],
                         supnorm = supnorm[,2])
   
-  fname = paste0("sim_unifCVhalglm_",rr,"_",n,"_","simul.RData")
+  fname = paste0("sim_unifCVhalglm2G_",rr,"_",n,"_","simul.RData")
   save(halstuff_simul, glmstuff_simul, g0, Q0, file = fname)
   
   if (n >= 10000) {
@@ -195,7 +195,7 @@ for (rr in 1:5) {
                     risk = risk[,2],
                     riskg = riskg[,2],
                     supnorm = supnorm[,2])
-    fname = paste0("sim_unifCVhalglm_",rr,"_",n,"_",b,".RData")
+    fname = paste0("sim_unifCVhalglm2G_",rr,"_",n,"_",b,".RData")
     save(halstuff, glmstuff, g0, Q0, file = fname)
   }
 }
