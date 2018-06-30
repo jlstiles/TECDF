@@ -238,6 +238,8 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, formu = NULL) {
     formug = formu$g
   }
   
+  # 1 as in fitQ1 as opposed to fitQ means glm instead of hal
+  
   if (V == 1) {
     # fitQ = glm(formuQ,data=data, family = "binomial")
     fitQ = fit_hal(X = X, Y = Y, degrees = NULL, fit_type = "glmnet",

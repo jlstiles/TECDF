@@ -29,7 +29,7 @@ M = max(true$blip)
 ##
 ii = 0
 num_draws = 200
-for (rr in 1:5) {
+for (rr in 4:5) {
   n=1000
   ii = ii + 1
   print(ii)
@@ -53,7 +53,7 @@ for (rr in 1:5) {
     res = CATEsurv_plot(t = t, h = h, k = k, truth = truth, n = n, tmledata = data$tmledata1)
     risk = data$risk
     rownames(risk) = c("Q", "g")
-    return(list(reshal = reshal$info, res = res$info, risk = data$risk, supnorm = data$supnorm))
+    return(list(reshal = reshal$info, res = res$info, risk = risk, supnorm = data$supnorm))
   }
   
   # getres(100, t[seq(10,49,13)], bw, k, truth_h[seq(10,49,13)], d=1, g0, Q0)
@@ -84,7 +84,7 @@ for (rr in 1:5) {
   
   risk = do.call(rbind, lapply(allresults, FUN = function(x) x$risk[1,]))
   riskg = do.call(rbind, lapply(allresults, FUN = function(x) x$risk[2,]))
-
+  
   supnorm = do.call(rbind, lapply(allresults, FUN = function(x) x$supnorm))
   
   B = length(allresults)
@@ -117,20 +117,20 @@ for (rr in 1:5) {
                         risk = risk[,1],
                         riskg = riskg[,1],
                         supnorm = supnorm[,1])
-
-glmstuff_simul = list(coverage = coverage_glm, 
-                      B = B, 
-                      h = bw, 
-                      res = res_glm,
-                      blip = t[blip],
-                      true_df = true_df,
-                      plot_true = gg_true,
-                      risk = risk[,2],
-                      riskg = riskg[,2],
-                      supnorm = supnorm[,2])
-
-fname = paste0("sim_unifCVhalglm_",rr,"_",n,"_","simul.RData")
-save(halstuff_simul, glmstuff_simul, g0, Q0, file = fname)
+  
+  glmstuff_simul = list(coverage = coverage_glm, 
+                        B = B, 
+                        h = bw, 
+                        res = res_glm,
+                        blip = t[blip],
+                        true_df = true_df,
+                        plot_true = gg_true,
+                        risk = risk[,2],
+                        riskg = riskg[,2],
+                        supnorm = supnorm[,2])
+  
+  fname = paste0("sim_unifCVhalglm_",rr,"_",n,"_","simul.RData")
+  save(halstuff_simul, glmstuff_simul, g0, Q0, file = fname)
   
   if (n >= 10000) {
     cl = makeCluster(8, type = "SOCK")
@@ -186,7 +186,7 @@ save(halstuff_simul, glmstuff_simul, g0, Q0, file = fname)
                     risk = risk[,1],
                     riskg = riskg[,1],
                     supnorm = supnorm[,1])
-
+    
     glmstuff = list(coverage = coverage_glm, 
                     B = B, 
                     h = bw, 
