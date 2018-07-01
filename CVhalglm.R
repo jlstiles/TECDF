@@ -4,6 +4,7 @@ library(parallel)
 library(doSNOW)
 library(cateSurvival)
 
+sim_abbr = "lin"
 # Define th DGP functions for SCM
 g0 = function(W1) plogis(-.1-.5*sin(W1) - .4*(abs(W1)>1)*W1^2)
 Q0 = function(A,W1) plogis(.3*A + 5*A*sin(W1)^2 - A*cos(W1))
@@ -28,9 +29,9 @@ M = max(true$blip)
 ##
 ##
 ii = 0
-num_draws = 200
-for (rr in 4:5) {
-  n=1000
+num_draws = 100
+for (rr in 1:5) {
+  n=2500
   ii = ii + 1
   print(ii)
   t = seq(m, M, .01)
@@ -63,7 +64,7 @@ for (rr in 4:5) {
   } else cl = makeCluster(detectCores(), type = "SOCK")
   
   registerDoSNOW(cl)
-  blip = seq(10,49,13)
+  blip = seq(13,28,5)
   B=num_draws
   
   allresults=foreach(i=1:B,
@@ -129,7 +130,7 @@ for (rr in 4:5) {
                         riskg = riskg[,2],
                         supnorm = supnorm[,2])
   
-  fname = paste0("sim_unifCVhalglm_",rr,"_",n,"_","simul.RData")
+  fname = paste0("unifCVhalglm2G_lin",rr,"_",n,"_","simul.RData")
   save(halstuff_simul, glmstuff_simul, g0, Q0, file = fname)
   
   if (n >= 10000) {
@@ -195,7 +196,7 @@ for (rr in 4:5) {
                     risk = risk[,2],
                     riskg = riskg[,2],
                     supnorm = supnorm[,2])
-    fname = paste0("sim_unifCVhalglm_",rr,"_",n,"_",b,".RData")
+    fname = paste0("unifCVhalglm_",sim_abbr,rr,"_",n,"_",b,".RData")
     save(halstuff, glmstuff, g0, Q0, file = fname)
   }
 }

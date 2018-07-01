@@ -156,5 +156,7 @@ for (n in c(10000, 25000, 50000)) {
 }
 
 
-
+#' @export 
+test = gentmledata_hal(n = 1000, d = 1, g0, Q0, V = 10, RCT = FALSE)
+test
 

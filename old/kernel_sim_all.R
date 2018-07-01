@@ -26,15 +26,13 @@ M = max(true$blip)
 ##
 ##
 ii = 0
-for (n in c(10000, 50000)) {
+for (n in c(100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000)) {
   ii = ii + 1
   print(ii)
-  h_vec = seq(.01, 0.4, by = .01)
   t = seq(m, M, .01)
-  ideal = n^-.2
-  bw = order(abs(h_vec - ideal))[1]
+  bw = n^-.2
   
-  truths = truth.get(t=t, h=h_vec[bw], k, d=1, g0=g0, Q0=Q0)
+  truths = truth.get(t=t, h=bw, k, d=1, g0=g0, Q0=Q0)
   truth_h = truths$truth_h
   truth = truths$truth
   
@@ -50,16 +48,20 @@ for (n in c(10000, 50000)) {
     res = CATEsurv_plot(t = t, h = h, k = k, truth = truth, n = n, tmledata = tmledata)
     return(res$info)
   }
+
+  if (n >= 10000) {
+    cl = makeCluster(8, type = "SOCK")
+  } else cl = makeCluster(24, type = "SOCK")
   
-  cl = makeCluster(8, type = "SOCK")
   registerDoSNOW(cl)
   blip = seq(13,28,5)
   B=5000
+  
   allresults=foreach(i=1:B,
                      .packages=c("cateSurvival","mvtnorm","ggplot2", "cowplot")
                      ,.errorhandling='remove'
   )%dopar%
-  {getres(n, t[blip], h_vec[bw], k = k, 
+  {getres(n, t[blip], bw, k = k, 
           truth = truth_h[blip], d = 1, 
           g0 = g0, Q0 = Q0)}
   
@@ -79,43 +81,21 @@ for (n in c(10000, 50000)) {
   
   coverage = mean(cover)
   
-  num = L-1
-  plots = lapply(0:num, FUN = function(D) {
-    res_temp = res[1:B+D*B,]
-    S_t = res_temp$truth[1]
-    inds = c(1,4)
-    ests = c(unlist(lapply(inds, FUN = function(x) res_temp[,x])))
-    types = c("TMLE", "Initial")
-    type = c(unlist(lapply(types[1:2], FUN = function(x) rep(x,B))))
-    
-    inds = inds[order(types)]
-    colors = c("red","blue", "green", "yellow", "orange") 
-    
-    plotdf = data.frame(ests = ests, type = type)
-    ggover = ggplot(plotdf,aes(x=ests, color = type, fill=type)) + 
-      geom_density(alpha=.5)+
-      scale_fill_manual(values=colors)+
-      scale_color_manual(values=colors)+
-      theme(axis.title.x = element_blank())+
-      ggtitle(paste0("CATE survival, t=", t[blip[D+1]],", bw=",h_vec[bw]))
-    ggover = ggover+geom_vline(xintercept = S_t,color="black")+
-      geom_vline(xintercept=mean(res_temp[,inds[1]]),color = colors[1])+
-      geom_vline(xintercept=mean(res_temp[,inds[2]]),color = colors[2])
-    plot = ggover
-  })
- 
-  assign(paste0("res", n, "unif_simul"), list(plots = plots, 
-                                              coverage = coverage, 
+  assign(paste0("res", n, "unif_simul"), list(coverage = coverage, 
                                               B = B, 
-                                              h = h_vec[bw], 
+                                              h = bw, 
                                               res = res,
                                               blip = t[blip],
                                               true_df = true_df,
                                               plot_true = gg_true))
 
-  cl = makeCluster(8, type = "SOCK")
+  if (n >= 10000) {
+    cl = makeCluster(8, type = "SOCK")
+  } else cl = makeCluster(24, type = "SOCK")
+  
   registerDoSNOW(cl)
   blip = seq(13,28,5)
+  B=5000
   
   for (b in blip) {
     # b = blip[1]
@@ -123,7 +103,7 @@ for (n in c(10000, 50000)) {
                        .packages=c("cateSurvival","mvtnorm","ggplot2", "cowplot")
                        ,.errorhandling='remove'
     )%dopar%
-    {getres(n, t[b], h_vec[bw], k = k, 
+    {getres(n, t[b], bw, k = k, 
             truth = truth_h[b], d = 1, 
             g0 = g0, Q0 = Q0)}
     
@@ -138,38 +118,35 @@ for (n in c(10000, 50000)) {
     
     coverage = mean(cover)
     
-    
-    S_t = res$truth[1]
-    inds = c(1,4)
-    ests = c(unlist(lapply(inds, FUN = function(x) res[,x])))
-    types = c("TMLE", "Initial")
-    type = c(unlist(lapply(types[1:2], FUN = function(x) rep(x,B))))
-    
-    inds = inds[order(types)]
-    colors = c("red","blue", "green", "yellow", "orange") 
-    
-    plotdf = data.frame(ests = ests, type = type)
-    ggover = ggplot(plotdf,aes(x=ests, color = type, fill=type)) + 
-      geom_density(alpha=.5)+
-      scale_fill_manual(values=colors)+
-      scale_color_manual(values=colors)+
-      theme(axis.title.x = element_blank())+
-      ggtitle(paste0("CATE survival, t=", t[b],", bw=",h_vec[bw]))
-    ggover = ggover+geom_vline(xintercept = S_t,color="black")+
-      geom_vline(xintercept=mean(res[,inds[1]]),color = colors[1])+
-      geom_vline(xintercept=mean(res[,inds[2]]),color = colors[2])
-    
-    assign(paste0("res", n, "unif", b), list(plot = ggover, 
-                                                   coverage = coverage, 
+    assign(paste0("res", n, "unif", b), list(coverage = coverage, 
                                                    B = B, 
-                                                   h = h_vec[bw], 
+                                                   h = bw, 
                                                    res = res,
                                                    blip = t[b]))
 
   }
+  
+  if (n == 5000) {
+    save(res100unif13, res100unif18, res100unif23, res100unif28, 
+         res250unif13, res250unif18, res250unif23, res250unif28,
+         res500unif13, res500unif18, res500unif23, res500unif28,
+         res1000unif13, res1000unif18, res1000unif23, res1000unif28,
+         res2500unif13, res2500unif18, res2500unif23, res2500unif28,
+         res5000unif13, res5000unif18, res5000unif23, res5000unif28,
+         res100unif_simul, res250unif_simul, res500unif_simul, res1000unif_simul,
+         res2500unif_simul, res5000unif_simul,
+         g0, Q0, file = "kernel_sim_unifall.RData")
+  } 
+  
+  if (n == 50000) {
+    save(res10000unif13, res10000unif18, res10000unif23, res10000unif28,
+         res25000unif13, res25000unif18, res25000unif23, res25000unif28,
+         res50000unif13, res50000unif18, res50000unif23, res50000unif28,
+         res10000unif_simul, res25000unif_simul, 
+         res50000unif_simul, g0, Q0, file = "kernel_sim_unifall1.RData")
+    }
 }
 
-save(res10000unif13, res10000unif18, res10000unif23, res10000unif28,
-     res50000unif13, res50000unif18, res50000unif23, res50000unif28,
-     res10000unif_simul, res50000unif_simul, g0, Q0, file = "kernel_sim_unif10k50k.RData")
+
+
 
