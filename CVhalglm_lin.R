@@ -61,7 +61,7 @@ for (rr in 1:5) {
   
   if (n >= 10000) {
     cl = makeCluster(8, type = "SOCK")
-  } else cl = makeCluster(detectCores(), type = "SOCK")
+  } else cl = makeCluster(16, type = "SOCK")
   
   registerDoSNOW(cl)
   blip = seq(13,28,5)
@@ -130,12 +130,12 @@ for (rr in 1:5) {
                         riskg = riskg[,2],
                         supnorm = supnorm[,2])
   
-  fname = paste0("unifCVhalglm2G", sim_abbr, rr,"_",n,"_","simul.RData")
+  fname = paste0("unifCVhalglm1", sim_abbr, rr,"_",n,"_","simul.RData")
   save(halstuff, glmstuff, g0, Q0, file = fname)
   
   if (n >= 10000) {
     cl = makeCluster(8, type = "SOCK")
-  } else cl = makeCluster(detectCores(), type = "SOCK")
+  } else cl = makeCluster(16, type = "SOCK")
   
   registerDoSNOW(cl)
   blip = seq(10,49,13)
@@ -196,7 +196,7 @@ for (rr in 1:5) {
                     risk = risk[,2],
                     riskg = riskg[,2],
                     supnorm = supnorm[,2])
-    fname = paste0("unifCVhalglm_",sim_abbr,rr,"_",n,"_",b,".RData")
+    fname = paste0("unifCVhalglm1_",sim_abbr,rr,"_",n,"_",b,".RData")
     save(halstuff, glmstuff, g0, Q0, file = fname)
   }
 }
