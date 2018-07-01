@@ -108,7 +108,7 @@ for (rr in 1:5) {
   coverage_hal = mean(cover_hal)
   coverage_glm = mean(cover_glm)
   
-  halstuff_simul = list(coverage = coverage_hal, 
+  halstuff = list(coverage = coverage_hal, 
                         B = B, 
                         h = bw, 
                         res = res_hal,
@@ -119,7 +119,7 @@ for (rr in 1:5) {
                         riskg = riskg[,1],
                         supnorm = supnorm[,1])
   
-  glmstuff_simul = list(coverage = coverage_glm, 
+  glmstuff = list(coverage = coverage_glm, 
                         B = B, 
                         h = bw, 
                         res = res_glm,
@@ -131,7 +131,7 @@ for (rr in 1:5) {
                         supnorm = supnorm[,2])
   
   fname = paste0("unifCVhalglm2G_lin",rr,"_",n,"_","simul.RData")
-  save(halstuff_simul, glmstuff_simul, g0, Q0, file = fname)
+  save(halstuff, glmstuff, g0, Q0, file = fname)
   
   if (n >= 10000) {
     cl = makeCluster(8, type = "SOCK")
