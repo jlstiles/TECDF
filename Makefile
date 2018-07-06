@@ -131,7 +131,7 @@ else
 endif
 
 
-CVhalglm1: CVhalglm_lin1.R
+CVhalglm_lin1: CVhalglm_lin1.R
 ifeq (${JOB_ENGINE},slurm)
 	${SBATCH} --nodes 1 --job-name=$< ${SCRIPT_DIR}/sbatch-r.sh --file=$< --dir=${OUTPUT_DIR}
 else
