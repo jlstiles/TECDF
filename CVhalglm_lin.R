@@ -78,7 +78,7 @@ for (rr in 1:5) {
   } else cl = makeCluster(detectCores(), type = "SOCK")
   
   registerDoSNOW(cl)
-  blip = seq(8,64,8)
+  blip = seq(6, 48, 6)
   B=num_draws
   
   allresults=foreach(i=1:B,
