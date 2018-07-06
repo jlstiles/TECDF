@@ -30,8 +30,8 @@ M = max(true$blip)
 ##
 ii = 0
 num_draws = 100
-for (rr in 1:5) {
-  n=2500
+# for (rr in 1:5) {
+  n=5000
   ii = ii + 1
   print(ii)
   t = seq(m, M, .01)
@@ -73,8 +73,8 @@ for (rr in 1:5) {
   #        truth = truth_h[blip], d = 1, 
   #        g0 = g0, Q0 = Q0)
   
-  if (n >= 10000) {
-    cl = makeCluster(8, type = "SOCK")
+  if (n >= 1000) {
+    cl = makeCluster(12, type = "SOCK")
   } else cl = makeCluster(detectCores(), type = "SOCK")
   
   registerDoSNOW(cl)
@@ -89,16 +89,16 @@ for (rr in 1:5) {
           truth = truth_h[blip], d = 1, 
           g0 = g0, Q0 = Q0)}
 
-  fname = paste0("unifCVhalglm_",sim_abbr,rr,"_",n,".RData")
+  fname = paste0("unifCVhalglm_",sim_abbr,"_",n,".RData")
   save(allresults, file = fname)
-}
+# }
   
-  
-  
-#   res_hal = data.matrix(do.call(rbind, allresults_hal))
-#   res_hal = as.data.frame(res_hal)
-#   res_glm = data.matrix(do.call(rbind, allresults_glm))
-#   res_glm = as.data.frame(res_glm)
+
+
+  # res_hal = data.matrix(do.call(rbind, allresults_hal))
+  # res_hal = as.data.frame(res_hal)
+  # res_glm = data.matrix(do.call(rbind, allresults_glm))
+  # res_glm = as.data.frame(res_glm)
 #   
 #   risk = do.call(rbind, lapply(allresults, FUN = function(x) x$risk[1,]))
 #   riskg = do.call(rbind, lapply(allresults, FUN = function(x) x$risk[2,]))

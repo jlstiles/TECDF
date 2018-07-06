@@ -30,7 +30,7 @@ M = max(true$blip)
 ##
 
 num_draws = 5000
-for (n in c(100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000)) {
+for (n in c(1000, 2500, 5000, 10000, 25000, 50000)) {
     print(n)
     t = seq(m, M, .01)
     bw = n^-.2
@@ -59,7 +59,7 @@ for (n in c(100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000)) {
     #        truth = truth_h[blip], d = 1,
     #        g0 = g0, Q0 = Q0)
     
-    if (n >= 10000) {
+    if (n >= 1000) {
       cl = makeCluster(8, type = "SOCK")
     } else cl = makeCluster(detectCores(), type = "SOCK")
     
@@ -79,6 +79,12 @@ for (n in c(100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000)) {
     save(allresults, file = fname)
 }
 
+
+# coverage = mean(unlist(lapply(allresults, FUN = function(x) {
+#   all(x$resglm_simul[,6]==TRUE)
+# })))
+# 
+# coverage
 
 #   res_hal = data.matrix(do.call(rbind, allresults_hal))
 #   res_hal = as.data.frame(res_hal)

@@ -111,18 +111,18 @@ CATEsurv_plot = function(t, h, k,truth, n, tmledata = NULL, ...) {
     } else {
       kern_name = paste0("deg " , k$degree, ", range = ", k$range)
     }
-    surv_est = ggplot2::ggplot(data = df, aes(x=t,y=true, color = type)) + geom_line()+
-      scale_x_continuous(breaks = t)+
-      geom_ribbon(data=df,aes(ymax=right,ymin=left),
-                  fill="gray",colour=NA,alpha=0.5)+labs(y = "S(t)")+
-      ggtitle(paste0("estimating CATE ", "'survival'", " curve"),
-              subtitle = paste0("bandwidth = ", h, " n = ",n, " kernel: ", kern_name))
-    
-    capt = "S(t) = prob CATE exceeds t."
-    surv_est=cowplot::ggdraw(add_sub(surv_est,capt, x= 0, y = 0.8, hjust = 0, vjust = 0.5,
-                            vpadding = grid::unit(1, "lines"), fontfamily = "",
-                            fontface = "plain",colour = "black", size = 12, angle = 0,
-                            lineheight = 0.9))
+    # surv_est = ggplot2::ggplot(data = df, aes(x=t,y=true, color = type)) + geom_line()+
+    #   scale_x_continuous(breaks = t)+
+    #   geom_ribbon(data=df,aes(ymax=right,ymin=left),
+    #               fill="gray",colour=NA,alpha=0.5)+labs(y = "S(t)")+
+    #   ggtitle(paste0("estimating CATE ", "'survival'", " curve"),
+    #           subtitle = paste0("bandwidth = ", h, " n = ",n, " kernel: ", kern_name))
+    # 
+    # capt = "S(t) = prob CATE exceeds t."
+    # surv_est=cowplot::ggdraw(add_sub(surv_est,capt, x= 0, y = 0.8, hjust = 0, vjust = 0.5,
+    #                         vpadding = grid::unit(1, "lines"), fontfamily = "",
+    #                         fontface = "plain",colour = "black", size = 12, angle = 0,
+    #                         lineheight = 0.9))
     left = df$left[1:length(t)] 
     right = df$right[1:length(t)]
     cover = truth <= right & truth >= left
@@ -130,7 +130,7 @@ CATEsurv_plot = function(t, h, k,truth, n, tmledata = NULL, ...) {
                       init = init.whole.curve,
                       truth = truth,
                       cover = cover)
-    out = list(info = info, steps = ff$steps, plot = surv_est)
+    out = list(info = info, steps = ff$steps)
   } else {
     df = data.frame(t = rep(t,3),
                     left = rep(ci[,3],3),
@@ -151,8 +151,6 @@ CATEsurv_plot = function(t, h, k,truth, n, tmledata = NULL, ...) {
                       cover = cover)
     out = list(info = info, steps = ff$steps)
   }
-  
-  
   return(out)
 }
 

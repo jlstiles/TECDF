@@ -30,8 +30,8 @@ M = max(true$blip)
 ##
 ii = 0
 num_draws = 100
-for (rr in 1:5) {
-  n=2500
+# for (rr in 5:5) {
+  n=5000
   ii = ii + 1
   print(ii)
   t = seq(m, M, .01)
@@ -45,7 +45,7 @@ for (rr in 1:5) {
                        CATE = rep(t,2),
                        type = c(rep("smoothed", length(truth)),
                                 rep("true", length(truth))))
-  gg_true = ggplot(true_df, aes(x=CATE, y=truth, color = type)) + geom_line()
+  # gg_true = ggplot(true_df, aes(x=CATE, y=truth, color = type)) + geom_line()
   
   # setting up a simulation
   getres = function(n, t, h, k, truth, d = 1, g0, Q0, formu = NULL) {
@@ -73,8 +73,8 @@ for (rr in 1:5) {
   #        truth = truth_h[blip], d = 1, 
   #        g0 = g0, Q0 = Q0)
   
-  if (n >= 10000) {
-    cl = makeCluster(8, type = "SOCK")
+  if (n >= 1000) {
+    cl = makeCluster(12, type = "SOCK")
   } else cl = makeCluster(detectCores(), type = "SOCK")
   
   registerDoSNOW(cl)
@@ -89,10 +89,9 @@ for (rr in 1:5) {
           truth = truth_h[blip], d = 1, 
           g0 = g0, Q0 = Q0)}
   
-  fname = paste0("unifCVhalglm_",sim_abbr,rr,"_",n,".RData")
+  fname = paste0("unifCVhalglm_",sim_abbr,"_",n,".RData")
   save(allresults, file = fname)
-}
-
+# }
 
 
 #   res_hal = data.matrix(do.call(rbind, allresults_hal))
