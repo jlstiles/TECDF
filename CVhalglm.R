@@ -4,7 +4,7 @@ library(parallel)
 library(doSNOW)
 library(cateSurvival)
 
-sim_abbr = "lin"
+sim_abbr = ""
 # Define th DGP functions for SCM
 g0 = function(W1) plogis(-.1-.5*sin(W1) - .4*(abs(W1)>1)*W1^2)
 Q0 = function(A,W1) plogis(.3*A + 5*A*sin(W1)^2 - A*cos(W1))
@@ -49,22 +49,36 @@ for (rr in 1:5) {
   
   # setting up a simulation
   getres = function(n, t, h, k, truth, d = 1, g0, Q0, formu = NULL) {
-    data=gentmledata_hal(n, d = 1, g0, Q0, V = 10, RCT = FALSE)
-    reshal = CATEsurv_plot(t = t, h = h, k = k, truth = truth, n = n, tmledata = data$tmledata)
-    res = CATEsurv_plot(t = t, h = h, k = k, truth = truth, n = n, tmledata = data$tmledata1)
+    data=gentmledata_hal(n, d = 1, g0, Q0, V = 2, RCT = FALSE)
+    reshal_simul = CATEsurv_plot(t = t, h = h, k = k, truth = truth, n = n, tmledata = data$tmledata)
+    resglm_simul = CATEsurv_plot(t = t, h = h, k = k, truth = truth, n = n, tmledata = data$tmledata1)
+    reshal = lapply(1:length(t), FUN = function(x) {
+      res = CATEsurv_plot(t = t[x], h = h, k = k, truth = truth[x], n = n, tmledata = data$tmledata)
+      return(res)
+     })
+    resglm = lapply(1:length(t), FUN = function(x) {
+      res = CATEsurv_plot(t = t[x], h = h, k = k, truth = truth[x], n = n, tmledata = data$tmledata1)
+      return(res)
+    })
     risk = data$risk
     rownames(risk) = c("Q", "g")
-    return(list(reshal = reshal$info, res = res$info, risk = risk, supnorm = data$supnorm))
+    return(list(reshal_simul = reshal_simul$info, 
+                resglm_simul = resglm_simul$info, 
+                reshal = reshal,
+                resglm = resglm,
+                risk = risk, supnorm = data$supnorm
+                ))
   }
-  
-  # getres(100, t[seq(10,49,13)], bw, k, truth_h[seq(10,49,13)], d=1, g0, Q0)
+  # tests = getres(n, t[blip], bw, k = k, 
+  #        truth = truth_h[blip], d = 1, 
+  #        g0 = g0, Q0 = Q0)
   
   if (n >= 10000) {
     cl = makeCluster(8, type = "SOCK")
   } else cl = makeCluster(detectCores(), type = "SOCK")
   
   registerDoSNOW(cl)
-  blip = seq(13,28,5)
+  blip = seq(8,64,8)
   B=num_draws
   
   allresults=foreach(i=1:B,
@@ -74,130 +88,131 @@ for (rr in 1:5) {
   {getres(n, t[blip], bw, k = k, 
           truth = truth_h[blip], d = 1, 
           g0 = g0, Q0 = Q0)}
-  
-  allresults_hal = lapply(allresults, FUN = function(x) x$reshal)
-  allresults_glm = lapply(allresults, FUN = function(x) x$res)
-  
-  res_hal = data.matrix(do.call(rbind, allresults_hal))
-  res_hal = as.data.frame(res_hal)
-  res_glm = data.matrix(do.call(rbind, allresults_glm))
-  res_glm = as.data.frame(res_glm)
-  
-  risk = do.call(rbind, lapply(allresults, FUN = function(x) x$risk[1,]))
-  riskg = do.call(rbind, lapply(allresults, FUN = function(x) x$risk[2,]))
-  
-  supnorm = do.call(rbind, lapply(allresults, FUN = function(x) x$supnorm))
-  
-  B = length(allresults)
-  L = length(blip)
-  base_seq = seq(1,L*B,L)
-  rows_res = unlist(lapply(1:length(blip), FUN = function(x) base_seq+x-1))
-  res_hal = res_hal[rows_res,]
-  res_glm = res_glm[rows_res,]
-  
-  cover_hal = unlist(lapply(1:B, FUN = function(x) {
-    cover_hal = all(allresults_hal[[x]]$cover==1)
-    return(cover_hal)
-  }))
-  
-  cover_glm = unlist(lapply(1:B, FUN = function(x) {
-    cover_glm = all(allresults_glm[[x]]$cover==1)
-    return(cover_glm)
-  }))
-  
-  coverage_hal = mean(cover_hal)
-  coverage_glm = mean(cover_glm)
-  
-  halstuff_simul = list(coverage = coverage_hal, 
-                        B = B, 
-                        h = bw, 
-                        res = res_hal,
-                        blip = t[blip],
-                        true_df = true_df,
-                        plot_true = gg_true,
-                        risk = risk[,1],
-                        riskg = riskg[,1],
-                        supnorm = supnorm[,1])
-  
-  glmstuff_simul = list(coverage = coverage_glm, 
-                        B = B, 
-                        h = bw, 
-                        res = res_glm,
-                        blip = t[blip],
-                        true_df = true_df,
-                        plot_true = gg_true,
-                        risk = risk[,2],
-                        riskg = riskg[,2],
-                        supnorm = supnorm[,2])
-  
-  fname = paste0("unifCVhalglm2G_lin",rr,"_",n,"_","simul.RData")
-  save(halstuff_simul, glmstuff_simul, g0, Q0, file = fname)
-  
-  if (n >= 10000) {
-    cl = makeCluster(8, type = "SOCK")
-  } else cl = makeCluster(detectCores(), type = "SOCK")
-  
-  registerDoSNOW(cl)
-  blip = seq(10,49,13)
-  B=num_draws
-  
-  for (b in blip) {
-    # b = blip[1]
-    allresults=foreach(i=1:B,
-                       .packages=c("cateSurvival","mvtnorm","ggplot2", "cowplot", "hal9001")
-                       ,.errorhandling='remove'
-    )%dopar%
-    {getres(n, t[b], bw, k = k, 
-            truth = truth_h[b], d = 1, 
-            g0 = g0, Q0 = Q0)}
-    
-    allresults_hal = lapply(allresults, FUN = function(x) x$reshal)
-    allresults_glm = lapply(allresults, FUN = function(x) x$res)
-    
-    res_hal = data.matrix(do.call(rbind, allresults_hal))
-    res_hal = as.data.frame(res_hal)
-    res_glm = data.matrix(do.call(rbind, allresults_glm))
-    res_glm = as.data.frame(res_glm)
-    
-    risk = do.call(rbind, lapply(allresults, FUN = function(x) x$risk[1,]))
-    riskg = do.call(rbind, lapply(allresults, FUN = function(x) x$risk[2,]))
-    
-    supnorm = do.call(rbind, lapply(allresults, FUN = function(x) x$supnorm))
-    
-    B = length(allresults)
-    cover_hal = unlist(lapply(1:B, FUN = function(x) {
-      cover = all(allresults_hal[[x]]$cover==1)
-      return(cover)
-    }))
-    
-    coverage_hal = mean(cover_hal)
-    
-    cover_glm = unlist(lapply(1:B, FUN = function(x) {
-      cover = all(allresults_glm[[x]]$cover==1)
-      return(cover)
-    }))
-    
-    coverage_glm = mean(cover_glm)
-    
-    halstuff = list(coverage = coverage_hal, 
-                    B = B, 
-                    h = bw, 
-                    res = res_hal,
-                    blip = t[b],
-                    risk = risk[,1],
-                    riskg = riskg[,1],
-                    supnorm = supnorm[,1])
-    
-    glmstuff = list(coverage = coverage_glm, 
-                    B = B, 
-                    h = bw, 
-                    res = res_glm,
-                    blip = t[b],
-                    risk = risk[,2],
-                    riskg = riskg[,2],
-                    supnorm = supnorm[,2])
-    fname = paste0("unifCVhalglm_",sim_abbr,rr,"_",n,"_",b,".RData")
-    save(halstuff, glmstuff, g0, Q0, file = fname)
-  }
-}
 
+  fname = paste0("unifCVhalglm_",sim_abbr,rr,"_",n,".RData")
+  save(allresults, file = fname)
+}
+  
+  
+  
+#   res_hal = data.matrix(do.call(rbind, allresults_hal))
+#   res_hal = as.data.frame(res_hal)
+#   res_glm = data.matrix(do.call(rbind, allresults_glm))
+#   res_glm = as.data.frame(res_glm)
+#   
+#   risk = do.call(rbind, lapply(allresults, FUN = function(x) x$risk[1,]))
+#   riskg = do.call(rbind, lapply(allresults, FUN = function(x) x$risk[2,]))
+#   
+#   supnorm = do.call(rbind, lapply(allresults, FUN = function(x) x$supnorm))
+#   
+#   B = length(allresults)
+#   L = length(blip)
+#   base_seq = seq(1,L*B,L)
+#   rows_res = unlist(lapply(1:length(blip), FUN = function(x) base_seq+x-1))
+#   res_hal = res_hal[rows_res,]
+#   res_glm = res_glm[rows_res,]
+#   
+#   cover_hal = unlist(lapply(1:B, FUN = function(x) {
+#     cover_hal = all(allresults_hal[[x]]$cover==1)
+#     return(cover_hal)
+#   }))
+#   
+#   cover_glm = unlist(lapply(1:B, FUN = function(x) {
+#     cover_glm = all(allresults_glm[[x]]$cover==1)
+#     return(cover_glm)
+#   }))
+#   
+#   coverage_hal = mean(cover_hal)
+#   coverage_glm = mean(cover_glm)
+#   
+#   halstuff_simul = list(coverage = coverage_hal, 
+#                         B = B, 
+#                         h = bw, 
+#                         res = res_hal,
+#                         blip = t[blip],
+#                         true_df = true_df,
+#                         risk = risk[,1],
+#                         riskg = riskg[,1],
+#                         supnorm = supnorm[,1])
+#   
+#   glmstuff_simul = list(coverage = coverage_glm, 
+#                         B = B, 
+#                         h = bw, 
+#                         res = res_glm,
+#                         blip = t[blip],
+#                         true_df = true_df,
+#                         risk = risk[,2],
+#                         riskg = riskg[,2],
+#                         supnorm = supnorm[,2])
+#   
+#   fname = paste0("unifCVhalglm2G_linT",rr,"_",n,"_","simul.RData")
+#   save(halstuff_simul, glmstuff_simul, g0, Q0, file = fname)
+#   
+#   if (n >= 10000) {
+#     cl = makeCluster(8, type = "SOCK")
+#   } else cl = makeCluster(detectCores(), type = "SOCK")
+#   
+#   registerDoSNOW(cl)
+#   blip = seq(10,49,13)
+#   B=num_draws
+#   
+#   for (b in blip) {
+#     # b = blip[1]
+#     allresults=foreach(i=1:B,
+#                        .packages=c("cateSurvival","mvtnorm","ggplot2", "cowplot", "hal9001")
+#                        ,.errorhandling='remove'
+#     )%dopar%
+#     {getres(n, t[b], bw, k = k, 
+#             truth = truth_h[b], d = 1, 
+#             g0 = g0, Q0 = Q0)}
+#     
+#     allresults_hal = lapply(allresults, FUN = function(x) x$reshal)
+#     allresults_glm = lapply(allresults, FUN = function(x) x$res)
+#     
+#     res_hal = data.matrix(do.call(rbind, allresults_hal))
+#     res_hal = as.data.frame(res_hal)
+#     res_glm = data.matrix(do.call(rbind, allresults_glm))
+#     res_glm = as.data.frame(res_glm)
+#     
+#     risk = do.call(rbind, lapply(allresults, FUN = function(x) x$risk[1,]))
+#     riskg = do.call(rbind, lapply(allresults, FUN = function(x) x$risk[2,]))
+#     
+#     supnorm = do.call(rbind, lapply(allresults, FUN = function(x) x$supnorm))
+#     
+#     B = length(allresults)
+#     cover_hal = unlist(lapply(1:B, FUN = function(x) {
+#       cover = all(allresults_hal[[x]]$cover==1)
+#       return(cover)
+#     }))
+#     
+#     coverage_hal = mean(cover_hal)
+#     
+#     cover_glm = unlist(lapply(1:B, FUN = function(x) {
+#       cover = all(allresults_glm[[x]]$cover==1)
+#       return(cover)
+#     }))
+#     
+#     coverage_glm = mean(cover_glm)
+#     
+#     halstuff = list(coverage = coverage_hal, 
+#                     B = B, 
+#                     h = bw, 
+#                     res = res_hal,
+#                     blip = t[b],
+#                     risk = risk[,1],
+#                     riskg = riskg[,1],
+#                     supnorm = supnorm[,1])
+#     
+#     glmstuff = list(coverage = coverage_glm, 
+#                     B = B, 
+#                     h = bw, 
+#                     res = res_glm,
+#                     blip = t[b],
+#                     risk = risk[,2],
+#                     riskg = riskg[,2],
+#                     supnorm = supnorm[,2])
+#     fname = paste0("unifCVhalglm_",sim_abbr,rr,"_",n,"_",b,".RData")
+#     save(halstuff, glmstuff, g0, Q0, file = fname)
+#   }
+# }
+# 
