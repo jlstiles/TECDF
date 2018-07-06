@@ -29,7 +29,7 @@ M = max(true$blip)
 ##
 ##
 ii = 0
-num_draws = 100
+num_draws = 400
 # for (rr in 5:5) {
   n=5000
   ii = ii + 1
@@ -89,7 +89,7 @@ num_draws = 100
           truth = truth_h[blip], d = 1, 
           g0 = g0, Q0 = Q0)}
   
-  fname = paste0("unifCVhalglm_",sim_abbr,"_",n,".RData")
+  fname = paste0("unifCVhalglm_",sim_abbr,"1_",n,".RData")
   save(allresults, file = fname)
 # }
 
