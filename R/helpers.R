@@ -268,7 +268,7 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, formu = NULL) {
       fitg = fit_hal(X = Xg, Y = A, degrees = NULL, fit_type = "glmnet",
                      n_folds = 10, use_min = TRUE, family = "binomial",
                      return_lasso = FALSE, yolo = TRUE)
-      g1W = predict(fitQ, new_data = Xg, type = 'response')
+      g1W = predict(fitg, new_data = Xg, type = 'response')
       
       fitg1 = glm(formula = formug, data = X, family = 'binomial')
       g1W1 = predict(fitg1, type = 'response')
