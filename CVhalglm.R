@@ -29,9 +29,9 @@ M = max(true$blip)
 ##
 ##
 ii = 0
-num_draws = 400
+num_draws = 500
 # for (rr in 1:5) {
-  n=5000
+  n=1000
   ii = ii + 1
   print(ii)
   t = seq(m, M, .01)

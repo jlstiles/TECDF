@@ -31,7 +31,7 @@ M = max(true$blip)
 ii = 0
 num_draws = 200
 # for (rr in 5:5) {
-  n=10000
+  n=5000
   ii = ii + 1
   print(ii)
   t = seq(m, M, .01)
@@ -69,9 +69,14 @@ num_draws = 200
                 risk = risk, supnorm = data$supnorm
     ))
   }
-  # tests = getres(n, t[blip], bw, k = k, 
-  #        truth = truth_h[blip], d = 1, 
-  #        g0 = g0, Q0 = Q0)
+  
+  debug(getres)
+  debug(CATEsurv_plot)
+  debug(gentmledata_hal)
+  
+  tests = getres(n, t[blip], bw, k = k,
+         truth = truth_h[blip], d = 1,
+         g0 = g0, Q0 = Q0)
   
   if (n >= 1000) {
     cl = makeCluster(12, type = "SOCK")
