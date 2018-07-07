@@ -470,4 +470,97 @@ get_results = function(allresults, n, L) {
   return(out)
 }
 
+#' @export 
+get_results_well = function(allresults, n, L, suffix = "well") {
+  cover_well_simul = mean(unlist(lapply(allresults, FUN = function(x) {
+    all(x$resglm_simul[,6]==TRUE)
+  })))
+  
+  cover_well = lapply(1:L, FUN = function(nn) {
+    cover = mean(unlist(lapply(allresults, FUN = function(x) {
+      x$resglm[[nn]]$info[,6]==TRUE
+    })))
+    return(cover)
+  })
+  
+  
+  # cover_hal
+  # cover_glm
+  
+  
+  # MSE
+  # allresults[[10]]$reshal_simul[1,"truth"]
+  
+  est_well_simul = lapply(1:L, FUN = function(b){
+    unlist(lapply(allresults, FUN = function(x) {
+      x$resglm_simul[b,1]
+    }))
+  })
+
+  
+  truths = vapply(1:L, FUN = function(b) allresults[[1]]$resglm_simul[b,"truth"], FUN.VALUE = 1)
+
+  est_well = lapply(1:L, FUN = function(b){
+    xx = lapply(c(1,4) , FUN = function(i) {
+      unlist(lapply(allresults, FUN = function(x) {
+        x$resglm[[b]]$info[1,i]
+      }))
+    })
+    xx = do.call(cbind, xx)
+    colnames(xx) = c("tmle_well", "init_well")
+    return(xx)
+  })
+  
+  est = lapply(1:L, FUN = function(x) {
+    ggg = cbind(est_well_simul[[x]], est_well[[x]])
+    colnames(ggg)[1] = 'tmle_well_simul'
+    return(ggg)
+    })
+  # head(est[[8]])
+  
+  mse = lapply(1:L, FUN = function(b) {
+    t(apply(est[[b]], 2, FUN = function(x){
+      variance = var(x)
+      bias = mean(x-truths[b])
+      mse = variance + bias^2                 
+      return(c(variance = variance, bias = bias, mse = mse))
+    }))
+  })
+  
+  mse
+  # head(est[[1]])
+  
+  plots = lapply(1:L, FUN = function(x) {
+    # x=1
+    res_temp = est[[x]]
+    S_t = truths[x]
+    B = nrow(res_temp)
+    bw = n^-.2
+    inds = 1:3
+    ests = c(unlist(lapply(inds, FUN = function(x) res_temp[,x])))
+    types = c("TMLE_glm_simul", "TMLE_glm", "Initial_glm")
+    type = c(unlist(lapply(types, FUN = function(x) rep(x,B))))
+    
+    inds = inds[order(types)]
+    colors = c("red","blue", "green") 
+    
+    plotdf = data.frame(ests = ests, type = type)
+    ggover = ggplot(plotdf,aes(x=ests, color = type, fill=type)) + 
+      geom_density(alpha=.5)+
+      scale_fill_manual(values=colors)+
+      scale_color_manual(values=colors)+
+      theme(axis.title.x = element_blank())+
+      ggtitle("CATE 'survival' Sampling Dists", 
+              subtitle = paste0("n = ", n, ", t = ",round(truths[x],4),", bw = ", round(bw,4)))  
+    ggover = ggover+geom_vline(xintercept = S_t,color="black")+
+      geom_vline(xintercept=mean(res_temp[,inds[1]]),color = colors[1])+
+      geom_vline(xintercept=mean(res_temp[,inds[2]]),color = colors[2])+
+      geom_vline(xintercept=mean(res_temp[,inds[3]]),color = colors[3])
+  })
+  
+  out = list(over_glm_simul = cover_glm_simul, cover_glm = cover_glm, mse = mse, est = est, plots = plots)
+  return(out)
+}
+
+
 

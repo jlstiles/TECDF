@@ -24,7 +24,8 @@ var(true$blip)
 mean(true$blip)
 m = min(true$blip)
 M = max(true$blip)
-
+m = -0.168
+M = .495
 # function start here
 ##
 ##
