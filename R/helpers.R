@@ -307,7 +307,7 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, formu = NULL) {
         fitg = fit_hal(X = Xg, Y = A, degrees = NULL, fit_type = "glmnet",
                        n_folds = 10, use_min = TRUE, family = "binomial",
                        return_lasso = FALSE, yolo = TRUE)
-        g1W = predict(fitQ, new_data = X[fold$validation_set,], type = 'response')
+        g1W = predict(fitg, new_data = X[fold$validation_set,], type = 'response')
         
         fitg1 = glm(formula = formug, data = X[fold$training_set,], family = 'binomial')
         g1W1 = predict(fitg1, newdata = X[fold$validation_set, ], type = 'response')
@@ -340,6 +340,134 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, formu = NULL) {
     supnorm = c(sup_hal = supnorm_hal, sup_glm = supnorm_glm)
   }
   return(list(tmledata = tmledata, tmledata1 = tmledata1, risk = risk, supnorm = supnorm))
+}
+
+
+#' @export 
+get_results = function(allresults, n, L) {
+  cover_hal_simul = mean(unlist(lapply(allresults, FUN = function(x) {
+    all(x$reshal_simul[,6]==TRUE)
+  })))
+  
+  cover_glm_simul = mean(unlist(lapply(allresults, FUN = function(x) {
+    all(x$resglm_simul[,6]==TRUE)
+  })))
+  
+  cover_hal_simul
+  cover_glm_simul
+  
+  cover_hal = lapply(1:L, FUN = function(nn) {
+    cover = mean(unlist(lapply(allresults, FUN = function(x) {
+      x$reshal[[nn]]$info[,6]==TRUE
+    })))
+    return(cover)
+  })
+  
+  cover_glm = lapply(1:L, FUN = function(nn) {
+    cover = mean(unlist(lapply(allresults, FUN = function(x) {
+      x$resglm[[nn]]$info[,6]==TRUE
+    })))
+    return(cover)
+  })
+  
+  # cover_hal
+  # cover_glm
+  
+  
+  # MSE
+  # allresults[[10]]$reshal_simul[1,"truth"]
+  
+  est_hal_simul = lapply(1:L, FUN = function(b){
+    unlist(lapply(allresults, FUN = function(x) {
+      x$reshal_simul[b,1]
+    }))
+  })
+  
+  est_glm_simul = lapply(1:L, FUN = function(b){
+    unlist(lapply(allresults, FUN = function(x) {
+      x$resglm_simul[b,1]
+    }))
+  })
+  
+  est_simul = lapply(1:L, FUN = function(x) {
+    xx = cbind(est_hal_simul[[x]], est_glm_simul[[x]])
+    colnames(xx) = c("tmle_hal_simul", "tmle_glm_simul")
+    return(xx)
+  })
+  
+  truths = vapply(1:L, FUN = function(b) allresults[[1]]$reshal_simul[b,"truth"], FUN.VALUE = 1)
+  
+  est_hal = lapply(1:L, FUN = function(b){
+    xx = lapply(c(1,4) , FUN = function(i) {
+      unlist(lapply(allresults, FUN = function(x) {
+        x$reshal[[b]]$info[1,i]
+      }))
+    })
+    xx = do.call(cbind, xx)
+    colnames(xx) = c("tmle_hal", "init_hal")
+    return(xx)
+  })
+  
+  est_glm = lapply(1:L, FUN = function(b){
+    xx = lapply(c(1,4) , FUN = function(i) {
+      unlist(lapply(allresults, FUN = function(x) {
+        x$resglm[[b]]$info[1,i]
+      }))
+    })
+    xx = do.call(cbind, xx)
+    colnames(xx) = c("tmle_glm", "init_glm")
+    return(xx)
+  })
+  
+  est = lapply(1:L, FUN = function(x) cbind(est_simul[[x]], est_hal[[x]], est_glm[[x]]))
+  # head(est[[8]])
+  
+  mse = lapply(1:L, FUN = function(b) {
+    t(apply(est[[b]], 2, FUN = function(x){
+      variance = var(x)
+      bias = mean(x-truths[b])
+      mse = variance + bias^2                 
+      return(c(variance = variance, bias = bias, mse = mse))
+    }))
+  })
+  
+  mse
+  # head(est[[1]])
+  
+  plots = lapply(1:L, FUN = function(x) {
+    # x=1
+    res_temp = est[[x]]
+    S_t = truths[x]
+    B = nrow(res_temp)
+    bw = n^-.2
+    inds = 1:6
+    ests = c(unlist(lapply(inds, FUN = function(x) res_temp[,x])))
+    types = c("TMLE_hal_simul", "TMLE_glm_simul", "TMLE_hal", "Initial_hal", "TMLE_glm", "Initial_glm")
+    type = c(unlist(lapply(types, FUN = function(x) rep(x,B))))
+    
+    inds = inds[order(types)]
+    colors = c("red","blue", "green", "yellow", "orange","violet") 
+    
+    plotdf = data.frame(ests = ests, type = type)
+    ggover = ggplot(plotdf,aes(x=ests, color = type, fill=type)) + 
+      geom_density(alpha=.5)+
+      scale_fill_manual(values=colors)+
+      scale_color_manual(values=colors)+
+      theme(axis.title.x = element_blank())+
+      ggtitle("CATE 'survival' Sampling Dists", 
+              subtitle = paste0("n = ", n, ", t = ",round(truths[x],4),", bw = ", round(bw,4)))  
+    ggover = ggover+geom_vline(xintercept = S_t,color="black")+
+      geom_vline(xintercept=mean(res_temp[,inds[1]]),color = colors[1])+
+      geom_vline(xintercept=mean(res_temp[,inds[2]]),color = colors[2])+
+      geom_vline(xintercept=mean(res_temp[,inds[3]]),color = colors[3])+
+      geom_vline(xintercept=mean(res_temp[,inds[4]]),color = colors[4])+
+      geom_vline(xintercept=mean(res_temp[,inds[5]]),color = colors[5])+
+      geom_vline(xintercept=mean(res_temp[,inds[6]]),color = colors[6])
+  })
+  
+  out = list(cover_hal_simul = cover_hal_simul, cover_glm_simul = cover_glm_simul,
+             cover_hal = cover_hal, cover_glm = cover_glm, mse = mse, est = est, plots = plots)
+  return(out)
 }
 
 
