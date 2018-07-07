@@ -51,7 +51,7 @@ num_draws = 500
   
   # setting up a simulation
   getres = function(n, t, h, k, truth, d = 1, g0, Q0, formu = NULL) {
-    data=gentmledata_hal(n, d = 1, g0, Q0, V = 2, RCT = FALSE)
+    data=gentmledata_hal(n, d = 1, g0, Q0, V = 10, RCT = FALSE)
     reshal_simul = CATEsurv_plot(t = t, h = h, k = k, truth = truth, n = n, tmledata = data$tmledata)
     resglm_simul = CATEsurv_plot(t = t, h = h, k = k, truth = truth, n = n, tmledata = data$tmledata1)
     reshal = lapply(1:length(t), FUN = function(x) {
