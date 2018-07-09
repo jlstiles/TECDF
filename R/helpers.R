@@ -558,7 +558,7 @@ get_results_well = function(allresults, n, L, suffix = "well") {
       geom_vline(xintercept=mean(res_temp[,inds[3]]),color = colors[3])
   })
   
-  out = list(over_glm_simul = cover_glm_simul, cover_glm = cover_glm, mse = mse, est = est, plots = plots)
+  out = list(cover_well_simul = cover_well_simul, cover_well = cover_well, mse = mse, est = est, plots = plots)
   return(out)
 }
 
