@@ -32,7 +32,7 @@ M = .495
 ii = 0
 num_draws = 200
 # for (rr in 1:5) {
-  n=5000
+  n=2500
   ii = ii + 1
   print(ii)
   t = seq(m, M, .01)
@@ -90,7 +90,7 @@ num_draws = 200
           truth = truth_h[blip], d = 1, 
           g0 = g0, Q0 = Q0)}
 
-  fname = paste0("unifCVhalglm_",sim_abbr,"1_",n,".RData")
+  fname = paste0("unifCVhalglm_",sim_abbr,"3_",n,".RData")
   save(allresults, file = fname)
 # }
   

@@ -146,6 +146,34 @@ else
 	${R} $< ${OUTPUT_DIR}/$<.out &
 endif
 
+CVhalglm2: CVhalglm1.R
+ifeq (${JOB_ENGINE},slurm)
+	${SBATCH} --nodes 1 --job-name=$< ${SCRIPT_DIR}/sbatch-r.sh --file=$< --dir=${OUTPUT_DIR}
+else
+	${R} $< ${OUTPUT_DIR}/$<.out &
+endif
+
+CVhalglm3: CVhalglm1.R
+ifeq (${JOB_ENGINE},slurm)
+	${SBATCH} --nodes 1 --job-name=$< ${SCRIPT_DIR}/sbatch-r.sh --file=$< --dir=${OUTPUT_DIR}
+else
+	${R} $< ${OUTPUT_DIR}/$<.out &
+endif
+
+CVhalglm4: CVhalglm1.R
+ifeq (${JOB_ENGINE},slurm)
+	${SBATCH} --nodes 1 --job-name=$< ${SCRIPT_DIR}/sbatch-r.sh --file=$< --dir=${OUTPUT_DIR}
+else
+	${R} $< ${OUTPUT_DIR}/$<.out &
+endif
+
+CVhalglm5: CVhalglm1.R
+ifeq (${JOB_ENGINE},slurm)
+	${SBATCH} --nodes 1 --job-name=$< ${SCRIPT_DIR}/sbatch-r.sh --file=$< --dir=${OUTPUT_DIR}
+else
+	${R} $< ${OUTPUT_DIR}/$<.out &
+endif
+
 # Options customized based on "7. GPU job script" at:
 # http://research-it.berkeley.edu/services/high-performance-computing/running-your-jobs
 gpu-test: gpu-test.Rmd
