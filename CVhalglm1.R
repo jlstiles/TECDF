@@ -29,6 +29,7 @@ M = .495
 # function start here
 ##
 ##
+ii = 0
 rr = 1
 num_draws = 200
 # for (rr in 1:5) {
