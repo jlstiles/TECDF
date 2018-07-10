@@ -304,10 +304,12 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, formu = NULL) {
         Xg = X[fold$training_set,]
         A = Xg$A
         Xg$A = NULL
+        newX = X
+        newX$A = NULL
         fitg = fit_hal(X = Xg, Y = A, degrees = NULL, fit_type = "glmnet",
                        n_folds = 10, use_min = TRUE, family = "binomial",
                        return_lasso = FALSE, yolo = TRUE)
-        g1W = predict(fitg, new_data = X[fold$validation_set,], type = 'response')
+        g1W = predict(fitg, new_data = newX[fold$validation_set,], type = 'response')
         
         fitg1 = glm(formula = formug, data = X[fold$training_set,], family = 'binomial')
         g1W1 = predict(fitg1, newdata = X[fold$validation_set, ], type = 'response')

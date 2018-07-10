@@ -32,7 +32,7 @@ M = 0.319
 ii = 0
 num_draws = 200
 # for (rr in 5:5) {
-  n=5000
+  n=2500
   ii = ii + 1
   print(ii)
   t = seq(m, M, .01)
