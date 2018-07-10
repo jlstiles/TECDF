@@ -31,7 +31,8 @@ M = 0.319
 ##
 ##
 ii = 0
-num_draws = 500
+rr = 1
+num_draws = 550
 # for (rr in 5:5) {
   n=1000
   ii = ii + 1
@@ -91,7 +92,7 @@ num_draws = 500
           truth = truth_h[blip], d = 1, 
           g0 = g0, Q0 = Q0)}
   
-  fname = paste0("unifCVhalglm_",sim_abbr,"_",n,".RData")
+  fname = paste0("unifCVhalglm_",sim_abbr,rr,"_",n,".RData")
   save(allresults, file = fname)
 # }
 
