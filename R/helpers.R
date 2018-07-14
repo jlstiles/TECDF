@@ -82,13 +82,20 @@ truth.get = function(t, h, k, d, g0, Q0) {
 }
 
 
+bw_select = function(t, h_start, k, tmledata = NULL, ...) {
+  if (is.null(tmledata)) tmledata=gentmledata(n=n, d=d, g0=g0, Q0=Q0, formu=formu)
+  
+}
+
 #' @export 
-CATEsurv_plot = function(t, h, k,truth, n, tmledata = NULL, ...) {
+CATEsurv_plot = function(t, h, k,truth, n, tmledata = NULL, fun, ...) {
   if (is.null(tmledata)) tmledata=gentmledata(n=n, d=d, g0=g0, Q0=Q0, formu=formu)
   if (length(t)>1) simultaneous.inference = TRUE else simultaneous.inference = FALSE
-  ff= gentmle_alt1(initdata=tmledata, estimate_fun = blipdist_estimate2,
+  
+  ff= fun(initdata=tmledata, estimate_fun = blipdist_estimate2,
                    update_fun = blipdist_update, max_iter = 1000, t=t, h=h,
                    k = k, simultaneous.inference = simultaneous.inference)
+  
 
   ci = ci_gentmle(ff, level = 0.95)
   whole.curve = ff$tmleests
