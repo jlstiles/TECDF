@@ -75,10 +75,10 @@ num_draws = 220
                 risk = risk, supnorm = data$supnorm
                 ))
   }
-  tests = getres(n, t[blip], bw, k = k,
-         truth = truth_h[blip], d = 1,
-         g0 = g0, Q0 = Q0)
-  tests
+  # tests = getres(n, t[blip], bw, k = k,
+  #        truth = truth_h[blip], d = 1,
+  #        g0 = g0, Q0 = Q0)
+  # tests
   
   if (n >= 1000) {
     cl = makeCluster(12, type = "SOCK")
