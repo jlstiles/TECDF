@@ -83,21 +83,6 @@ gentmle <- function(initdata, estimate_fun, update_fun, max_iter = 100,N=NULL, .
 }
 
 
-#' @export
-ci_gentmle <- function(gentmle_obj, level = 0.95) {
-
-    n <- nrow(gentmle_obj$initdata)
-    n_ests <- length(gentmle_obj$tmleests)
-    ldply(seq_len(n_ests), function(i) {
-
-        est <- gentmle_obj$tmleests[i]
-        sd <- sqrt(gentmle_obj$ED2[i])/sqrt(n)
-        z <- (1 + level)/2
-        lower <- est - qnorm(z) * sd
-        upper <- est + qnorm(z) * sd
-        data.frame(parameter = names(est), est = est, sd = sd, lower = lower, upper = upper)
-    })
-}
 
 #' @export
 print.gentmle <- function(gentmle_obj) {

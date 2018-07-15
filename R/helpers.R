@@ -37,19 +37,24 @@ truth.get = function(t, h, k, d, g0, Q0) {
   R = k$range
   
   if (is.null(k$degree)) {
-    kernel = list(kern = function(x, R, veck) .5*as.numeric(-1<=x&1>=x), 
-                  kern_cdf = function(x, R, veck) (1/(2*R))*as.numeric(x > -R)*(pmin(x ,R) + R))
+    kernel = list(kern = function(x, R, veck) 1/(2*R)*as.numeric(-R <= x & R >= x), 
+                  kern_cdf = function(x, R, veck) (1/(2*R))*as.numeric(x > -R)*(pmin(x ,R)+R))
     veck = 1
   } else {
-    deg = k$degree
-    mm = vapply(seq(1,deg,2), FUN = function(r) {
-      vapply(seq(r,(r+deg+1),2), FUN = function(x) 2*R^x, FUN.VALUE = 1)/seq(r,(r+deg+1),2)
-    }, FUN.VALUE = rep(1,(deg+3)/2))
+    kk = k$deg/2-2
+    area_row = vapply(0:(kk+2), FUN = function(i) 2*R^(2*i+1)/(2*i+1), FUN.VALUE = 1)
+    zero_row = vapply(0:(kk+2), FUN = function(i) R^(2*i), FUN.VALUE = 1)
+    deriv_row = c(0,vapply(0:(kk+1), FUN = function(i) 2*(i + 1)*R^(2*i+1), FUN.VALUE = 1))
+    if (kk>0) {
+      orth_rows = lapply(seq(0,max((2*kk-2),0),2), FUN = function(r) {
+        vapply(0:(kk+2), FUN = function(i) 2*R^(2*i+3+r)/(2*i+3+r), FUN.VALUE = 1)
+      })
+      orth_rows = do.call(rbind, orth_rows) 
+      mm = rbind(area_row, zero_row, deriv_row, orth_rows)
+    } else mm = rbind(area_row, zero_row, deriv_row)
     
-    mm = cbind(mm, vapply(seq(0,deg+1,2), FUN = function(x) R^x, FUN.VALUE = 1)) 
-    mm = t(mm)
     mm_inv = solve(mm)
-    veck = mm_inv %*% c(1,rep(0, (deg+1)/2))
+    veck = mm_inv %*% c(1, rep(0,kk+2))
     kernel = list(kern = function(x, R, veck) {
       ll = lapply(1:length(veck), FUN = function(c) veck[c]*x^(2*c-2))
       w = Reduce("+", ll)*(x > -R & x < R)
@@ -62,6 +67,7 @@ truth.get = function(t, h, k, d, g0, Q0) {
       return(w)
     })
   }
+  
   kernel$R = R
   kernel$veck = veck
   
