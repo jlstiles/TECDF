@@ -11,7 +11,13 @@ g0 = function(W1) plogis(.2 + .2*W1)
 Q0 = function(A,W1) plogis(A + 2.5*A*W1 + W1)
 
 # define kernel
-kernel = make_kernel(degree = 4, R = 2)
+
+kernel4 = make_kernel(degree = 4, R = 2)
+kernel6 = make_kernel(degree = 4, R = 2)
+kernel8 = make_kernel(degree = 4, R = 2)
+kernel10 = make_kernel(degree = 4, R = 2)
+kernel12 = make_kernel(degree = 4, R = 2)
+
 # getting two kinds of truths, plotting them
 # make a grid of true parameters
 true = gendata.blip(2000000,d = 1, g0, Q0)
@@ -55,5 +61,6 @@ for (n in c(1000, 2500, 5000, 10000, 25000, 50000)) {
     
     nname = (paste0("bwselect_", n, "_", a, ".RData"))
     save(allresults, bw_seq, blip, file = nname)
+    stopCluster(cl)
   }
 }
