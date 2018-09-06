@@ -50,7 +50,7 @@ for (i in 1:5){
                                                           d=1, g0, Q0)$truth_h)
     
     truthname = paste0("truths_h_", n,"_kernel",i, ".RData")
-    save(truths_h, blips, g0, Q0, kernel_list[[i]], file = truthname)
+    save(truths_h, blips, g0, Q0, kernel, file = truthname)
     for (a in seq(6,48,6)) {
       blip = blips[a]
       truth = mean(true$blip> blip)
