@@ -67,7 +67,7 @@ for (i in 1:5){
                     bw_seq = bw_seq, g0, Q0, kernel)}
       
       nname = (paste0("bwselect_", n, "_", a,"_kernel", i, ".RData"))
-      save(allresults, bw_seq, blip, kernel_list[[i]], file = nname)
+      save(allresults, bw_seq, blip, kernel, file = nname)
       stopCluster(cl)
     }
   }
