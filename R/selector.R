@@ -58,6 +58,7 @@ sim_bwselect = function(n, blip, truth, truths_h, bw_seq, g0, Q0, kernel)
     ind = order((est_vec + 1.96*SE_vec)[start_h:end_h])[1]
   }
   
+  
   ind = ifelse((start_h:end_h)[ind] == big_ind, big_ind, (start_h:end_h)[ind]+1)
   
   CI_lower = (est_vec - 1.96*SE_vec)[1:big_ind]
@@ -65,7 +66,6 @@ sim_bwselect = function(n, blip, truth, truths_h, bw_seq, g0, Q0, kernel)
   
   CIs = cbind(est_vec[1:big_ind], CI_lower, CI_upper)
   cover = truth >= CIs[,2] & truth <= CIs[,3]
-  
   
   # do linear regresssion and check positivity of coeffcoefficient
   x = CIs[,1]
@@ -80,9 +80,22 @@ sim_bwselect = function(n, blip, truth, truths_h, bw_seq, g0, Q0, kernel)
   }
   
   SE_vecI = pava(y=SE_vec, decreasing = TRUE)
+  
+  if (decre) ind_alt = order((est_vec - 1.96*SE_vecI)[start_h:end_h], decreasing = TRUE)[1] else {
+    ind_alt = order((est_vec + 1.96*SE_vecI)[start_h:end_h])[1]
+  }
+  ind_alt = (start_h:end_h)[ind_alt]
+  
   CI_lowerI = estsI - 1.96*SE_vecI
   CI_upperI = estsI + 1.96*SE_vecI
   CIsI = data.frame(ests = estsI, lower = CI_lowerI, upper = CI_upperI)
+  
+  CI_lowerI_alt = ests - 1.96*SE_vecI
+  CI_upperI_alt = ests + 1.96*SE_vecI
+  CIsI_alt = data.frame(ests = ests, lower = CI_lowerI_alt, upper = CI_upperI_alt)
+  
+  coverI_alt = truth >= CIsI_alt[,2] & truth <= CIsI_alt[,3]
+  
   if (incre) {
     m = order(CIsI[,3])[1]
     indI = max(which(CIsI[,3]==CIsI[m,3]))
@@ -92,14 +105,13 @@ sim_bwselect = function(n, blip, truth, truths_h, bw_seq, g0, Q0, kernel)
     indI = max(which(CIsI[,2]==CIsI[m,2]))
     indI = ifelse(indI == big_ind, indI, indI + 1)
   }
-  coverI = truth >= CIs[indI,2] & truth <= CIs[indI,3]
   
-  CIs_all = cbind(CIs, CIsI)
+  CIs_all = cbind(CIs, CIsI, CIsI_alt)
   return(list(CIs_all = CIs_all
-              ,CIs = rbind(CIs[ind, ], CIs[indI, ], CIs[big_ind,])
-              ,cover = c(cover[ind], coverI, cover[big_ind])
+              ,CIs = rbind(CIs[ind, ], CIsI_alt[ind_alt,], CIs[indI, ],  CIsI_alt[indI,], CIs[big_ind,])
+              ,cover = c(cover[ind], coverI_alt[ind_alt], cover[indI], coverI_alt[indI], cover[big_ind])
               ,truths = c(truth = truth, truth_h = truths_h)
               ,incre = incre
-              ,inds = c(ind, indI) 
+              ,inds = c(ind, ind_alt, indI) 
               ,range = c(start_h, end_h)))
 }
