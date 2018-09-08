@@ -6,6 +6,8 @@ library(cateSurvival)
 library(Iso)
 library(foreach)
 
+getwd()
+
 # Define th DGP functions for SCM
 g0 = function(W1) plogis(.2 + .2*W1)
 Q0 = function(A,W1) plogis(A + 2.5*A*W1 + W1)
@@ -51,7 +53,7 @@ for (i in 1:5){
                                                                    range = kernels[[i]][2]),
                                                           d=1, g0, Q0)$truth_h)
     
-    truthname = paste0("truths_h_", n,"_kernel",i, ".RData")
+    truthname = paste0("results_selector/truths_h_", n,"_kernel",i, ".RData")
     save(truths_h, blips, g0, Q0, kernel, file = truthname)
     for (a in seq(6,48,6)) {
       blip = blips[a]
@@ -68,7 +70,7 @@ for (i in 1:5){
       {sim_bwselect1(n=n, blip, truth = truth, truths_h = truths_h[[big_ind]][a], 
                     bw_seq = bw_seq, g0, Q0, kernel)}
       
-      nname = (paste0("bwselect_", n, "_", a,"_kernel", i, ".RData"))
+      nname = (paste0("results_selector/bwselect_", n, "_", a,"_kernel", i, ".RData"))
       save(allresults, bw_seq, blip, kernel, file = nname)
       stopCluster(cl)
     }
