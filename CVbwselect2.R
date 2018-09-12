@@ -35,9 +35,8 @@ M = max(true$blip)
 m = -0.195
 M = 0.319
 
-
 kernels = list(c(4,2), c(6, 4), c(8, 5), c(10, 5.6), c(12, 5.6))
-for (i in 1:5){
+for (i in 3:5){
   kernel = kernel_list[[i]]
   for (n in c(1000, 2500, 5000, 10000, 25000, 50000)) {
     blips = seq(m, M, .01)

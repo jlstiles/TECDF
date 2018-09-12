@@ -232,7 +232,7 @@ endif
 
 CVbwselect2: CVbwselect2.R
 ifeq (${JOB_ENGINE},slurm)
-	${SBATCH} --nodes 1 --job-name=$< ${SCRIPT_DIR}/sbatch-r.sh --file=$< --dir=${OUTPUT_DIR}
+	${SBATCH} --nodes 1 --job-name=$< ${SCRIPT_DIR}/sbatch-r.sh --file=$< --dir=${OUTPUT_DIR} --time=80:00:00
 else
 	${R} $< ${OUTPUT_DIR}/$<.out &
 endif
