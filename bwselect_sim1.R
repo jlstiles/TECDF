@@ -40,7 +40,7 @@ blips = seq(m, M, .01)
 # up to here we have kept the simulation the same as CVbwselect2
 # but here we will get simultaneous inference and proceed as before
 
-for (j in 1:2) {
+for (j in 3:4) {
   kernel = kernel_list[[j]]
   for (n in c(1000,2500,5000,10000,25000,50000)) {
     bw = n^-.2
