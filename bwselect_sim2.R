@@ -70,27 +70,10 @@ for (j in 3) {
         return(list(ci = ci, steps = steps))
     }
     nname = (paste0("results_selector1/bwselect1_", n, "_", a,"_kernel", j, ".RData"))
+    save(allresults, file = nname)
     }
   }
 }
 
 
-
-
-
-tmle_info1 = gentmle_alt3(initdata=tmledata, estimate_fun = blipdist_estimate3,
-                         update_fun = blipdist_update, max_iter = 1000, kernel = kernel,
-                         simultaneous.inference = TRUE, blip = blip, h = bw_seq[1])
-
-tmle_info1$tmleests
-
-tmle_info$steps
-tmle_info$tmleests
-tmle_info$initests
-abs(tmle_info$ED)-
-sqrt(tmle_info$ED2)/n
-
-truths = unlist(lapply(truths_h, FUN = function(x) x[seq(6,48,6)[a]]))
-ci = ci_gentmle(tmle_info)
-ci$lower <= truths & ci$upper >= truths 
 
