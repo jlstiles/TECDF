@@ -36,7 +36,7 @@ truth.get = function(t, h, k, d, g0, Q0) {
   # create the kernel according to specs
   R = k$range
   
-  if (is.null(k$degree)) {
+  if (is.null(k$deg)) {
     kernel = list(kern = function(x, R, veck) 1/(2*R)*as.numeric(-R <= x & R >= x), 
                   kern_cdf = function(x, R, veck) (1/(2*R))*as.numeric(x > -R)*(pmin(x ,R)+R))
     veck = 1
@@ -74,7 +74,7 @@ truth.get = function(t, h, k, d, g0, Q0) {
   B = gendata.blip(2e6, d, g0, Q0)$blip
   
   int = vapply(t, FUN = function(x0) {
-    w = kernel$kern_cdf((B - x0)/h, kernel$R, kernel$veck)
+    w = with(kernel, kern_cdf(x=(B - x0)/h, R = R, veck = veck))
     return(w)
   } ,FUN.VALUE=rep(1,2e6))
   
@@ -88,10 +88,6 @@ truth.get = function(t, h, k, d, g0, Q0) {
 }
 
 
-bw_select = function(t, h_start, k, tmledata = NULL, ...) {
-  if (is.null(tmledata)) tmledata=gentmledata(n=n, d=d, g0=g0, Q0=Q0, formu=formu)
-  
-}
 
 #' @export 
 CATEsurv_plot = function(t, h, k,truth, n, tmledata = NULL, fun, ...) {
