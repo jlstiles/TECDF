@@ -53,7 +53,7 @@ for (j in 4) {
       truth = mean(true$blip> blip)
       B = 1000
       cl_size = ifelse(n > 10000, 12, 24)
-      cl = makeCluster(2, type = "SOCK")
+      cl = makeCluster(8, type = "SOCK")
       registerDoSNOW(cl)
       
       allresults=foreach(i=1:B,
