@@ -58,60 +58,99 @@ bwselect_jl = function(CIs, len, plus = TRUE)
 }
 
 #' @export
-bwselect_m = function(CIs, plus = TRUE)
+bwselect_m = function(CIs, truth = NULL, SE_true = NULL, z_alpha = 1.96)
 {
-  # start at a sensible spot, then depending on increasing or decr psi in h
-  # we travel until no longer helpful
+  
+  # setting some overall parameters
   r = nrow(CIs)
-  ests = CIs[,1]
   y = 1:r
+  ests = CIs[,1]
   incre = coef(lm(y~ests))[2] >= 0
-
-  SE_vec = (CIs[,3] - CIs[,2])/(2*1.96)
-  SE_vecI = pava(y=SE_vec, decreasing = TRUE)
   
-  w = (1/SE_vecI)/(sum(1/SE_vecI))
+  # compute SE's
+  SEs = (CIs[,3] - CIs[,2])/(2*z_alpha)
+  SEsI = pava(y=SEs, decreasing = TRUE)
   
-  if (incre) {
-    estsI = pava(y=ests, decreasing = FALSE)
-    estsI_plus = pava(y=ests, decreasing = FALSE,w=w)
+  w = 1/SEsI/(sum(1/SEsI))
+  
+  #  computing various estimates
+  estsI_wt = pava(y=ests, decreasing = !incre, w=w)
+  CIs_var = ci_form(ests, SEsI, z_alpha)
+  CIsI_var = ci_form(estsI_wt, SEsI, z_alpha)
+  
+  if (!is.null(truth)) {
+    incre0 = truth$S0 <= truth$S0h
+    if (incre == incre0) {
+      estsI0_wt =  estsI_wt
+      } else estsI0_wt = pava(y=ests, decreasing = !incre0, w=w)
+      
+    CIsI0_var = ci_form(estsI0_wt, SEsI, z_alpha)
+    
+    ind_I0_var = ind_choose(CIsI0_var, incre)
+    
+    if (SEsI[ind_I0_var] >= SEs[ind_I0_var]) {
+      CI_I0_var = CIs_var[ind_I0_var,]
+    } else {
+      CI_I0_var = CIs[ind_I0_var,]
+    }
+    
+  }
+  
+  if (!is.null(SE_true)) {
+    w0 = 1/SE_true/(sum(1/SE_true))
+    estsI_wt0 = pava(y=ests, decreasing = !incre, w=w0)
+    if (incre == incre0) {
+      estsI0_wt0 = estsI_wt0
+      } else estsI0_wt0 = pava(y=ests, decreasing = !incre0, w=w0)
+    
+    CIsI_var0 = ci_form(estsI_wt0, SE_true, z_alpha)
+    CIsI0_var0 = ci_form(estsI0_wt0, SE_true, z_alpha)
+    CIs_var0 = ci_form(ests, SE_true, z_alpha)
+    
+    ind_I_var0 = ind_choose(CIsI_var0, incre)
+    ind_I0_var0 = ind_choose(CIsI0_var0, incre0)
+    
+    CI_I_var0 = CIsI_var0[ind_I_var0,]
+    CI_I0_var0 = CIsI0_var0[ind_I0_var0,]
+    
+    CI_jl_var0_info = bwselect_jl(CIs_var0, len = 5, plus = FALSE)
+    ind_jl_var0 = ifelse(CI_jl_var0_info$ind==r, r, CI_jl_var0_info$ind-1)
+    CI_jl_var0 = CIs_var0[ind_jl_var0,]
+  }
+  
+  # get jl method estimates
+  CI_jl_info = bwselect_jl(CIs, len = 5, plus = TRUE)
+  CI_jl = CI_jl_info$CI
+  CI_jl_var = CI_jl_info$CI_plus
+  ind_jl = CI_jl_info$ind
+  ind_jl_var = CI_jl_info$ind_plus
+  
+  ind_I_var = ind_choose(CIsI_var, incre)
+  ind_I_var = ifelse(ind_I_var==r, r, ind_I_var+1)
+  
+  if (SEsI[ind_I_var] >= SEs[ind_I_var]) {
+    CI_I_var = CIs_var[ind_I_var,]
   } else {
-    estsI = pava(y=ests, decreasing = TRUE)
-    estsI_plus = pava(y=ests, decreasing = TRUE,w=w)
+    CI_I_var = CIs[ind_I_var,]
   }
   
-  right = estsI + 1.96*SE_vecI
-  left = estsI - 1.96*SE_vecI
-  
-  right_plus = estsI_plus + 1.96*SE_vecI
-  left_plus = estsI_plus - 1.96*SE_vecI
-  
-  if (incre) {
-    m = order(right)[1]
-    ind = max(which(right==right[m]))
+  CIr = CIs[r,]
+  if (!is.null(SE_true) & !is.null(truth)) {
+    return(list(CI_jl = CI_jl, ind_jl = ind_jl, 
+                CI_jl_var = CI_jl_var, ind_jl_var = ind_jl_var,
+                CI_jl_var0 = CI_jl_var0, ind_jl_var0 = ind_jl_var0,
+                CI_I_var = CI_I_var, ind_I_var = ind_I_var,
+                CI_I_var0 = CI_I_var0, ind_I_var0 = ind_I_var0,
+                CI_I0_var0 = CI_I0_var0, ind_I0_var0 = ind_I0_var0,
+                CIr = CIr,
+                mono = incre==incre0))
   } else {
-    m = order(left, decreasing = TRUE)[1]
-    ind = max(which(left==left[m]))
+    return(list(CI_jl = CI_jl, ind_jl = ind_jl, 
+                CI_jl_var = CI_jl_var, ind_jl_var = ind_jl_var,
+                CI_I_var = CI_I_var, ind_I_var = ind_I_var,
+                CIr = CIr,
+                mono = incre==incre0))
   }
-  
-  if (incre) {
-    m_plus = order(right_plus)[1]
-    ind_plus = max(which(right_plus==right_plus[m]))
-  } else {
-    m_plus = order(left_plus, decreasing = TRUE)[1]
-    ind_plus = max(which(left_plus==left_plus[m]))
-  }
-  
-  ind = ifelse(ind==r, r, ind+1)
-  ind_plus = ifelse(ind_plus==r, r, ind_plus+1)
-  if (SE_vec[ind] >= SE_vecI[ind]) CI = CIs[ind,] else {
-    CI = c(ests[ind], ests[ind] - 1.96*SE_vecI[ind], ests[ind] + 1.96*SE_vecI[ind])
-  }
-  
-  if (SE_vec[ind_plus] >= SE_vecI[ind_plus]) CI_plus = CIs[ind_plus,] else {
-    CI_plus = c(ests[ind_plus], ests[ind_plus] - 1.96*SE_vecI[ind_plus], 
-           ests[ind_plus] + 1.96*SE_vecI[ind_plus])
-  }
-  
-  return(list(CI = CI, ind = ind, CI_plus = CI_plus, ind_plus = ind_plus))
 }
+
+

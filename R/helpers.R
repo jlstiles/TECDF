@@ -611,3 +611,23 @@ make_kernel = function(degree, R){
   return(list(veck = veck, R = R,  kern = kern, kern_cdf = kern_cdf))
 }
 
+#' @export
+ind_choose = function(CIs, incre) {
+  right = CIs[,3]
+  left = CIs[,2]
+  if (incre) {
+    m = order(right)[1]
+    ind = max(which(right==right[m]))
+  } else {
+    m = order(left, decreasing = TRUE)[1]
+    ind = max(which(left==left[m]))
+  }
+  return(ind)
+}
+
+#' @export
+ci_form = function(est, SE, z_alpha) {
+  df = as.data.frame(cbind(est, est - z_alpha*SE, est + z_alpha*SE))
+  colnames(df) = c("ests", "left", "right")
+  return(df)
+}

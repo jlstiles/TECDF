@@ -8,7 +8,8 @@ Description: A package to compute TMLE's for various parameters of interest, kee
 Depends: R (>= 2.14.0),
     mvtnorm,
     origami,
-    hal9001
+    hal9001,
+    Iso
 Imports:
     parallel,
     foreach,
