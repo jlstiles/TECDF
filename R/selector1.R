@@ -1,5 +1,5 @@
 #' @export
-bwselect_jl = function(CIs, len, plus = TRUE)
+bwselect_jl = function(CIs, len, plus = TRUE, z_alpha = 1.96)
 {
   # start at a sensible spot, then depending on increasing or decr psi in h
   # we travel until no longer helpful
@@ -13,6 +13,7 @@ bwselect_jl = function(CIs, len, plus = TRUE)
     } else start_h = r
   }
   
+  if (start_h != r) {
   decre = CIs[start_h+5,1] < CIs[start_h+4,1]
   for (i in start_h:(r-1)){
     if (decre) {
@@ -36,11 +37,11 @@ bwselect_jl = function(CIs, len, plus = TRUE)
   ind = ifelse((start_h:end_h)[ind] == r, r, (start_h:end_h)[ind]+1)
   
   if (plus) {
-    SE_vec = (CIs[,3] - CIs[,2])/(2*1.96)
+    SE_vec = (CIs[,3] - CIs[,2])/(2*z_alpha)
     SE_vecI = pava(y=SE_vec, decreasing = TRUE)
     
-    if (decre) ind_plus = order((CIs[,1] - 1.96*SE_vecI)[start_h:end_h], decreasing = TRUE)[1] else {
-      ind_plus = order((CIs[,1] + 1.96*SE_vecI)[start_h:end_h])[1]
+    if (decre) ind_plus = order((CIs[,1] - z_alpha*SE_vecI)[start_h:end_h], decreasing = TRUE)[1] else {
+      ind_plus = order((CIs[,1] + z_alpha*SE_vecI)[start_h:end_h])[1]
     }
     
     ind_plus = (start_h:end_h)[ind_plus]
@@ -55,6 +56,11 @@ bwselect_jl = function(CIs, len, plus = TRUE)
     
     return(list(CI = CIs[ind,], ind = ind, CI_plus = CI_plus, ind_plus = ind_plus))
   } else return(list(CI = CIs[ind,], ind = ind))
+  } else {
+    if (plus) {
+      return(list(CI = CIs[r,], ind = r, CI_plus = CIs[r,], ind_plus = r))
+    } else return(list(CI = CIs[r,], ind = r))
+  } 
 }
 
 #' @export
@@ -113,13 +119,13 @@ bwselect_m = function(CIs, truth = NULL, SE_true = NULL, z_alpha = 1.96)
     CI_I_var0 = CIsI_var0[ind_I_var0,]
     CI_I0_var0 = CIsI0_var0[ind_I0_var0,]
     
-    CI_jl_var0_info = bwselect_jl(CIs_var0, len = 5, plus = FALSE)
+    CI_jl_var0_info = bwselect_jl(CIs_var0, len = 5, plus = FALSE, z_alpha = z_alpha)
     ind_jl_var0 = ifelse(CI_jl_var0_info$ind==r, r, CI_jl_var0_info$ind-1)
     CI_jl_var0 = CIs_var0[ind_jl_var0,]
   }
   
   # get jl method estimates
-  CI_jl_info = bwselect_jl(CIs, len = 5, plus = TRUE)
+  CI_jl_info = bwselect_jl(CIs, len = 5, plus = TRUE, z_alpha = z_alpha)
   CI_jl = CI_jl_info$CI
   CI_jl_var = CI_jl_info$CI_plus
   ind_jl = CI_jl_info$ind

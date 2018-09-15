@@ -1,4 +1,4 @@
-#' @export
+
 sim_bwselect1 = function(n, blip, truth, truths_h, bw_seq, g0, Q0, kernel)
 {
   tmledata = gentmledata(n, d = 1, g0, Q0, V=10, formu = NULL)
@@ -116,7 +116,7 @@ sim_bwselect1 = function(n, blip, truth, truths_h, bw_seq, g0, Q0, kernel)
               ,range = c(start_h, end_h)))
 }
 
-#' @export
+
 sim_bwselect = function(n, blip, truth, truths_h, bw_seq, g0, Q0, kernel)
 {
   tmledata = gentmledata(n, d = 1, g0, Q0, V=10, formu = NULL)

@@ -52,8 +52,8 @@ for (j in 3) {
       blip = blips[a]
       truth = mean(true$blip> blip)
       B = 1000
-      cl_size = 12
-      cl = makeCluster(6, type = "SOCK")
+      cl_size = ifelse(n > 10000, 12, 24)
+      cl = makeCluster(2, type = "SOCK")
       registerDoSNOW(cl)
       
       allresults=foreach(i=1:B,
@@ -61,19 +61,12 @@ for (j in 3) {
                          ,.errorhandling='remove'
       )%dopar%
       {
-        tmledata = gentmledata(n, d = 1, g0, Q0, V = 1, formu = NULL)
-        tmle_info = gentmle_alt3(initdata=tmledata, estimate_fun = blipdist_estimate3,
-                               update_fun = blipdist_update, max_iter = 1000, kernel = kernel,
-                               simultaneous.inference = TRUE, blip = blip, h = bw_seq)
-        ci = ci_gentmle(tmle_info)
-        steps = tmle_info$steps
-        return(list(ci = ci, steps = steps))
+        info = sim_bwselect(n, blip, bw_seq, g0, Q0, kernel)
+        return(list(ci = info$ci, zscore = info$zscore))
     }
     nname = (paste0("results_selector1/bwselect1_", n, "_", a,"_kernel", j, ".RData"))
     save(allresults, file = nname)
     }
   }
 }
-
-
 
