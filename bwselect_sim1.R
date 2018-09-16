@@ -41,18 +41,21 @@ blips = seq(m, M, .01)
 # but here we will get simultaneous inference and proceed as before
 
 for (j in 1) {
+  j = 1
   kernel = kernel_list[[j]]
   for (n in c(1000,2500,5000,10000,25000,50000)) {
+    n = 2500
     bw = n^-.2
     step = round(bw/20, 3)
     bw_seq = seq(step, 20*step, step)
     r = length(bw_seq)
   
-    if (n==1000) seqq = seq(30,48,6) else seqq = seq(6,48,6)
+    if (n==1000) seqq = seq(30,48,6) else seqq = seq(48,48,6)
     for (a in seqq) {
+      a = 30
       blip = blips[a]
       truth = mean(true$blip> blip)
-      B = 1000
+      B = 2
       cl_size = 4
       cl = makeCluster(4, type = "SOCK")
       registerDoSNOW(cl)

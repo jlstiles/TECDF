@@ -48,7 +48,7 @@ for (j in 3) {
     bw_seq = seq(step, 20*step, step)
     r = length(bw_seq)
   
-    if (n==1000) seqq = seq(30,48,6) else seqq = seq(6,48,6)
+    if (n==1000) seqq = seq(30,48,6) else seqq = seq(48,48,6)
      for (a in seqq) {
       blip = blips[a]
       truth = mean(true$blip> blip)
