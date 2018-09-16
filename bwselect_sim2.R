@@ -40,20 +40,21 @@ blips = seq(m, M, .01)
 # up to here we have kept the simulation the same as CVbwselect2
 # but here we will get simultaneous inference and proceed as before
 
-for (j in 3) {
+for (j in 2) {
   kernel = kernel_list[[j]]
   for (n in c(1000,2500,5000,10000,25000,50000)) {
     bw = n^-.2
     step = round(bw/20, 3)
     bw_seq = seq(step, 20*step, step)
     r = length(bw_seq)
-  
-    for (a in seq(6,48,6)) {
+    
+    if (n==1000) seqq = seq(30,48,6) else seqq = seq(6,48,6)
+    for (a in seqq) {
       blip = blips[a]
       truth = mean(true$blip> blip)
       B = 1000
       cl_size = ifelse(n > 10000, 12, 24)
-      cl = makeCluster(8, type = "SOCK")
+      cl = makeCluster(4, type = "SOCK")
       registerDoSNOW(cl)
       
       allresults=foreach(i=1:B,
