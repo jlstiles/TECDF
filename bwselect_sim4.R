@@ -48,7 +48,7 @@ for (j in 4) {
     bw_seq = seq(step, 20*step, step)
     r = length(bw_seq)
   
-    if (n==1000) seqq = seq(30,48,6) else seqq = sseq(6,48,6)
+    seqq = seq(6,48,6)
     for (a in seqq) {
       blip = blips[a]
       truth = mean(true$blip> blip)
@@ -67,6 +67,7 @@ for (j in 4) {
     }
     nname = (paste0("results_selector1/bwselect1_", n, "_", a,"_kernel", j, ".RData"))
     save(allresults, file = nname)
+    stopCluster(cl)
     }
   }
 }
