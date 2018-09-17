@@ -42,7 +42,7 @@ blips = seq(m, M, .01)
 
 for (j in 3) {
   kernel = kernel_list[[j]]
-  for (n in c(1000,2500,5000,10000,25000,50000)) {
+  for (n in c(2500,5000,10000,25000,50000)) {
     bw = n^-.2
     step = round(bw/20, 3)
     bw_seq = seq(step, 20*step, step)
@@ -67,6 +67,7 @@ for (j in 3) {
     }
     nname = (paste0("results_selector1/bwselect1_", n, "_", a,"_kernel", j, ".RData"))
     save(allresults, file = nname)
+    stopCluster(cl)
     }
   }
 }

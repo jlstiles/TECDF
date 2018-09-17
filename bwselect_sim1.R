@@ -67,6 +67,7 @@ for (j in 1) {
     }
     nname = (paste0("results_selector1/bwselect1_", n, "_", a,"_kernel", j, ".RData"))
     save(allresults, file = nname)
+    stopCluster(cl)
     }
   }
 }

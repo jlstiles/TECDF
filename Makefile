@@ -271,6 +271,7 @@ ifeq (${JOB_ENGINE},slurm)
 else
 	${R} $< ${OUTPUT_DIR}/$<.out &
 endif
+
 # Options customized based on "7. GPU job script" at:
 # http://research-it.berkeley.edu/services/high-performance-computing/running-your-jobs
 gpu-test: gpu-test.Rmd

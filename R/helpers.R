@@ -616,11 +616,9 @@ ind_choose = function(CIs, incre) {
   right = CIs[,3]
   left = CIs[,2]
   if (incre) {
-    m = order(right)[1]
-    ind = max(which(right==right[m]))
+    ind = order(right)[1]
   } else {
-    m = order(left, decreasing = TRUE)[1]
-    ind = max(which(left==left[m]))
+    ind = order(left, decreasing = TRUE)[1]
   }
   return(ind)
 }

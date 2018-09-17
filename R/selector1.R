@@ -48,8 +48,8 @@ bwselect_jl = function(CIs, len, plus = TRUE, z_alpha = 1.96)
     ind_plus = ifelse(ind_plus==r, r, ind_plus+1)
     if (SE_vecI[ind_plus] >= SE_vec[ind_plus]) {
       CI_plus = c(CIs[ind_plus,1], 
-                  CIs[ind_plus,1]-1.96*SE_vecI[ind_plus],
-                  CIs[ind_plus,1]+1.96*SE_vecI[ind_plus])
+                  CIs[ind_plus,1]-z_alpha*SE_vecI[ind_plus],
+                  CIs[ind_plus,1]+z_alpha*SE_vecI[ind_plus])
     } else {
       CI_plus = CIs[ind_plus,]
     }
@@ -92,7 +92,8 @@ bwselect_m = function(CIs, truth = NULL, SE_true = NULL, z_alpha = 1.96)
       
     CIsI0_var = ci_form(estsI0_wt, SEsI, z_alpha)
     
-    ind_I0_var = ind_choose(CIsI0_var, incre)
+    ind_I0_var = ind_choose(CIsI0_var, incre0)
+    ind_I0_var = ifelse(ind_I0_var==r, r, ind_I0_var+1)
     
     if (SEsI[ind_I0_var] >= SEs[ind_I0_var]) {
       CI_I0_var = CIs_var[ind_I0_var,]
@@ -146,6 +147,7 @@ bwselect_m = function(CIs, truth = NULL, SE_true = NULL, z_alpha = 1.96)
                 CI_jl_var = CI_jl_var, ind_jl_var = ind_jl_var,
                 CI_jl_var0 = CI_jl_var0, ind_jl_var0 = ind_jl_var0,
                 CI_I_var = CI_I_var, ind_I_var = ind_I_var,
+                CI_I0_var = CI_I_var, ind_I0_var = ind_I0_var,
                 CI_I_var0 = CI_I_var0, ind_I_var0 = ind_I_var0,
                 CI_I0_var0 = CI_I0_var0, ind_I0_var0 = ind_I0_var0,
                 CIr = CIr,
