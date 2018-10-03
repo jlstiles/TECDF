@@ -38,7 +38,7 @@ for (j in 2) {
     # n=10000
     degree = length(kernel_list$veck)/2+1
     bw = size^-(1/(2*degree+3))
-    step = round(bw/r, 3)
+    step = round(bw/20, 3)
     bw_seq = seq(step, 20*step, step)
     r = length(bw_seq)
     
@@ -56,7 +56,7 @@ for (j in 2) {
                          ,.errorhandling='remove'
       )%dopar%
       {
-        info = sim_bwselect(n, blip, bw_seq, g0, Q0, kernel, zscore = NULL)
+        info = sim_bwselect(size, blip, bw_seq, g0, Q0, kernel, zscore = NULL)
         return(list(ests = info$ests, SE = info$SE))
       }
       nname = (paste0("results_selector/bwselect_", size, "_", a,"_kernel", j, ".RData"))
