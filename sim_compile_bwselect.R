@@ -8,7 +8,7 @@ library(gridExtra)
 # for (j in 4) {
 # 
 #   fnames = lapply(c(1000,2500,5000,10000,25000,50000), FUN = function(size) {
-#     paste0("/Users/jlstiles/Dropbox/cateSurvival/results/kernel",j,"_bwselect_new/bwselect_",
+#     paste0("/Users/jlstiles/Dropbox/cateSurvival/results/kernel",j,"_bwselect_ind/bwselect_",
 #            size,"_",seq(6,48,6),"_kernel",j,".RData")
 #   })
 # 
@@ -20,27 +20,29 @@ library(gridExtra)
 #     }
 #   }
 # }
+kern_inds = 2:3
+sizes = 1000
+blip_nums = 1:8
 
-
-info_allkerns = lapply(1:4, FUN = function(j) {
+info_allkerns = lapply(kern_inds, FUN = function(j) {
   # j=1
-  fnames = lapply(c(1000,2500,5000,10000,25000,50000), FUN = function(size) {
-    paste0("/Users/jlstiles/Dropbox/cateSurvival/results/kernel",j,"_bwselect_new/bwselect_",
+  fnames = lapply(sizes, FUN = function(size) {
+    paste0("/Users/jlstiles/Dropbox/cateSurvival/results/kernel",j,"_bwselect_ind/bwselect_",
            size,"_",seq(6,48,6),"_kernel",j,".RData")
   })
   
-  tnames = lapply(c(1000,2500,5000,10000,25000,50000), FUN = function(size) {
-    paste0("/Users/jlstiles/Dropbox/cateSurvival/results/kernel",j,"_bwselect_new/truths_h_",
+  tnames = lapply(sizes, FUN = function(size) {
+    paste0("/Users/jlstiles/Dropbox/cateSurvival/results/kernel",j,"_bwselect_ind/truths_h_",
            size,"_kernel",j,".RData")
   })
   
-  info_allsizes = lapply(1:6, FUN = function(i) {
+  info_allsizes = lapply(1:length(sizes), FUN = function(i) {
     # i=1
     load(tnames[[i]])
     true = gendata.blip(2000000,d = 1, g0, Q0)
     blip_select = blips[seq(6,48,6)]
-    truth = unlist(lapply(1:8, FUN = function(a) mean(true$blip> blip_select[a])))
-    info_allblips = lapply (1:8, FUN = function(a) {
+    truth = unlist(lapply(blip_nums, FUN = function(a) mean(true$blip> blip_select[a])))
+    info_allblips = lapply (blip_nums, FUN = function(a) {
       # a=7
       load(fnames[[i]][[a]])
       S0h = truths_h[[20]][seq(6,48,6)[a]]
@@ -97,8 +99,8 @@ info_allkerns = lapply(1:4, FUN = function(j) {
   return(info_allsizes)
 })
 
-info_allkerns[[1]][[4]][[3]]
-save(info_allkerns, file = "bwselect_allkerns.RData") 
+info_allkerns
+# save(info_allkerns, file = "bwselect_allkerns.RData") 
 
 cov_allkerns = lapply(info_allkerns, FUN = function(x) {
   lapply(x, FUN = function(y) {

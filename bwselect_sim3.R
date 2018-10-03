@@ -6,15 +6,6 @@ library(cateSurvival)
 library(Iso)
 library(foreach)
 
-# j=3
-# tnames = lapply(c(1000,2500,5000,10000,25000,50000), FUN = function(size) {
-#   paste0("/Users/jlstiles/Dropbox/cateSurvival/results/kernel",j,"_bwselect_new/truths_h_",
-#          size,"_kernel",j,".RData")
-# })
-
-# i=1
-# load(tnames[[i]])
-
 # Define th DGP functions for SCM
 g0 = function(W1) plogis(.2 + .2*W1)
 Q0 = function(A,W1) plogis(A + 2.5*A*W1 + W1)
@@ -41,20 +32,22 @@ blips = seq(m, M, .01)
 # but here we will get simultaneous inference and proceed as before
 
 for (j in 3) {
+  # j=1
   kernel = kernel_list[[j]]
-  for (n in c(1000, 2500,5000,10000,25000,50000)) {
-    bw = n^-.2
-    step = round(bw/20, 3)
+  for (n in c(1000,2500,5000,10000,25000,50000)) {
+    # n=10000
+    degree = length(kernel_list$veck)/2+1
+    bw = size^-(1/(2*degree+3))
     bw_seq = seq(step, 20*step, step)
     r = length(bw_seq)
-  
-    seqq = seq(6,48,6)
-     for (a in seqq) {
+    
+    for (a in seq(6,48,6)) {
+      # a = 48
       blip = blips[a]
       truth = mean(true$blip> blip)
-      B = 1000
-      cl_size = ifelse(n > 10000, 12, 24)
-      cl = makeCluster(12, type = "SOCK")
+      # B = 10
+      # cl_size = ifelse(n > 10000, 12, 24)
+      cl = makeCluster(24, type = "SOCK")
       registerDoSNOW(cl)
       
       allresults=foreach(i=1:B,
@@ -62,13 +55,11 @@ for (j in 3) {
                          ,.errorhandling='remove'
       )%dopar%
       {
-        info = sim_bwselect(n, blip, bw_seq, g0, Q0, kernel)
-        return(list(ci = info$ci, zscore = info$zscore))
-    }
-    nname = (paste0("results_selector1/bwselect1_", n, "_", a,"_kernel", j, ".RData"))
-    save(allresults, file = nname)
-    stopCluster(cl)
+        info = sim_bwselect(n, blip, bw_seq, g0, Q0, kernel, zscore = NULL)
+        return(list(ests = info$ests, SE = info$SE))
+      }
+      nname = (paste0("results_selector/bwselect_", n, "_", a,"_kernel", j, ".RData"))
+      save(allresults, file = nname)
     }
   }
 }
-
