@@ -5,6 +5,7 @@
 \title{gentmle}
 \usage{
 gentmle_alt(initdata, estimate_fun, update_fun, max_iter = 100, N = NULL,
+  simultaneous.inference = TRUE, kernel = NULL, blip = NULL, h = NULL,
   ...)
 }
 \arguments{
@@ -13,6 +14,10 @@ gentmle_alt(initdata, estimate_fun, update_fun, max_iter = 100, N = NULL,
 \item{update_fun, }{Function for update step}
 
 \item{max_iter, }{Maximum number of iteration steps}
+
+\item{N, }{controls order criterion, currently not used}
+
+\item{simultaneous.inference, }{passed to the}
 
 \item{..., }{Extra arguments that can be passed to update_fun and estimate_fun}
 }

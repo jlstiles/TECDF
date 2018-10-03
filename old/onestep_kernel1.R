@@ -7,23 +7,41 @@ library(cowplot)
 library(parallel)
 library(doSNOW)
 
+R = 5
+degree = 4
+kk = degree/2-2
+area_row = vapply(0:(kk+2), FUN = function(i) 2*R^(2*i+1)/(2*i+1), FUN.VALUE = 1)
+zero_row = vapply(0:(kk+2), FUN = function(i) R^(2*i), FUN.VALUE = 1)
+deriv_row = c(0,vapply(0:(kk+1), FUN = function(i) 2*(i + 1)*R^(2*i+1), FUN.VALUE = 1))
+if (kk>0) {
+  orth_rows = lapply(seq(0,max((2*kk-2),0),2), FUN = function(r) {
+    vapply(0:(kk+2), FUN = function(i) 2*R^(2*i+3+r)/(2*i+3+r), FUN.VALUE = 1)
+  })
+  orth_rows = do.call(rbind, orth_rows) 
+  mm = rbind(area_row, zero_row, deriv_row, orth_rows)
+} else mm = rbind(area_row, zero_row, deriv_row)
+
+mm_inv = solve(mm)
+veck = mm_inv %*% c(1, rep(0,kk+2))
+veck
+
 # The gaussian kernels are useless here, take a while to integrate and 
 # then there's round off error so I choose explicit integrals, which is lightning fas
 # and such kernels are formulaic to construct as per below--see tenth above
 
-unif_cdf = function(x) .5*as.numeric(x > -1)*(pmin(x ,1) + 1)
-Unif = function(x) .5*as.numeric(-1<=x&1>=x)
-
-deg = 11
-R = 2
-mm = vapply(seq(1,deg,2), FUN = function(r) {
-  vapply(seq(r,(r+deg+1),2), FUN = function(x) 2*R^x, FUN.VALUE = 1)/seq(r,(r+deg+1),2)
-}, FUN.VALUE = rep(1,(deg+3)/2))
-
-mm = cbind(mm, vapply(seq(0,deg+1,2), FUN = function(x) R^x, FUN.VALUE = 1)) 
-mm = t(mm)
-mm_inv = solve(mm)
-veck = mm_inv %*% c(1,rep(0, (deg + 1)/2))
+# unif_cdf = function(x) .5*as.numeric(x > -1)*(pmin(x ,1) + 1)
+# Unif = function(x) .5*as.numeric(-1<=x&1>=x)
+# 
+# deg = 4
+# R = 2
+# mm = vapply(seq(1,deg,2), FUN = function(r) {
+#   vapply(seq(r,(r+deg+1),2), FUN = function(x) 2*R^x, FUN.VALUE = 1)/seq(r,(r+deg+1),2)
+# }, FUN.VALUE = rep(1,(deg+3)/2))
+# 
+# mm = cbind(mm, vapply(seq(0,deg+1,2), FUN = function(x) R^x, FUN.VALUE = 1))
+# mm = t(mm)
+# mm_inv = solve(mm)
+# veck = mm_inv %*% c(1,rep(0, (deg + 1)/2))
 
 kern = function(x, R, veck) {
   ll = lapply(1:length(veck), FUN = function(c) veck[c]*x^(2*c-2))
@@ -48,12 +66,16 @@ y = kern(s, R=R, veck=veck)
 plot = qplot(x=s,y=y)+geom_line()
 plot
 
-# check orthogonality
+# check orthogonality (first val should be the area of 1)
 
-test_fcn = function(x) (x^10)*kern(x, R=R, veck = veck)
-test_int = integrate(test_fcn, lower = -R, upper = R,subdivisions = 10000)
-test_int$abs.error
-test_int$value
+test_fcn = as.data.frame(vapply(0:(degree-4), FUN = function(r) {
+  test_fcn = function(x) (x^r)*kern(x, R=R, veck = veck)
+  test_int = integrate(test_fcn, lower = -R, upper = R,subdivisions = 10000)
+  return(c(test_int$abs.error, test_int$value))
+}, FUN.VALUE = c(1,1)))
+rownames(test_fcn) = c("abs_error", "integral")
+colnames(test_fcn) = as.character(0:(degree - 4))
+test_fcn
 
 # Define th DGP functions for SCM
 g0 = function(W1) plogis(.2+.2*W1)

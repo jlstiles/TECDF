@@ -1,223 +1,180 @@
-
-sim_bwselect1 = function(n, blip, truth, truths_h, bw_seq, g0, Q0, kernel)
+#' @export
+bwselect_jl = function(ests, SEs, len, plus = TRUE, z_alpha = 1.96)
 {
-  tmledata = gentmledata(n, d = 1, g0, Q0, V=10, formu = NULL)
-  big_ind = length(bw_seq)
-  # undebug(gentmle_alt3)
-  test_bwselect = lapply(bw_seq, FUN = function(h) {
-    gentmle_alt3(initdata=tmledata, estimate_fun = blipdist_estimate2,
-                 update_fun = blipdist_update, max_iter = 1000, kernel = kernel,
-                 simultaneous.inference = FALSE, blip = blip, h = h)
-  })
-
-  est_vec = unlist(lapply(test_bwselect, FUN = function(x) x$tmleests))
-  est_derivs = vapply(2:length(bw_seq), FUN = function(i) {
-    (est_vec[i]-est_vec[i-1])/.01
-  }, FUN.VALUE = 1)
-  # est_derivs
-  
-  SE_vec = unlist(lapply(1:length(bw_seq), FUN = function(i) {
-    x = test_bwselect[[i]]
-    sqrt((x$ED2 - x$ED^2)/n)
-  }))
-  
-  SE_derivs = vapply(2:length(SE_vec), FUN = function(i) {
-    (SE_vec[i]-SE_vec[i-1])/.01
-  }, FUN.VALUE = 1)
-  # SE_derivs
-  
+  # form the CI's' according to z_alpha
+  CIs = ci_form(ests, SEs, z_alpha)
   # start at a sensible spot, then depending on increasing or decr psi in h
   # we travel until no longer helpful
-  for(i in 6:big_ind) {
-    ans = all(sign(est_vec[i:(i-4)] - est_vec[(i-1):(i-5)])>=0) |
-      all(sign(est_vec[i:(i-4)] - est_vec[(i-1):(i-5)])<=0)
+  
+  r = nrow(CIs)
+  for(i in (len+1):r) {
+    ans = all(sign(CIs[i:(i + 1 - len),1] - CIs[(i-1):(i - len),1]) >= 0) |
+      all(sign(CIs[i:(i-4),1] - CIs[(i-1):(i-5),1]) <= 0)
     if (ans) {
       start_h = i-5 
       break
-    } else start_h = big_ind
+    } else start_h = r
   }
-
-  decre = est_vec[start_h+5] < est_vec[start_h+4]
-  for (i in start_h:(big_ind-1)){
+  
+  if (start_h != r) {
+  decre = CIs[start_h+5,1] < CIs[start_h+4,1]
+  for (i in start_h:(r-1)){
     if (decre) {
       end_h = i + 1
-      if (!(est_vec[i] >= est_vec[i+1])) {
+      if (!(CIs[i,1] >= CIs[(i+1),1])) {
         end_h = i
         break
       }
     } else {
       end_h = i + 1
-      if (!(est_vec[i] <= est_vec[i+1])) {
-        end_h = i
-        break
-      }
-    }
-  }
-
-  if (decre) ind = order((est_vec - 1.96*SE_vec)[start_h:end_h], decreasing = TRUE)[1] else {
-    ind = order((est_vec + 1.96*SE_vec)[start_h:end_h])[1]
-  }
-  
-  
-  ind = ifelse((start_h:end_h)[ind] == big_ind, big_ind, (start_h:end_h)[ind]+1)
-  
-  CI_lower = (est_vec - 1.96*SE_vec)[1:big_ind]
-  CI_upper = (est_vec + 1.96*SE_vec)[1:big_ind]
-  
-  CIs = cbind(est_vec[1:big_ind], CI_lower, CI_upper)
-  cover = truth >= CIs[,2] & truth <= CIs[,3]
-  
-  # do linear regresssion and check positivity of coeffcoefficient
-  x = CIs[,1]
-  y = bw_seq[1:big_ind]
-  incre = coef(lm(y~x))[2] >= 0
-  
-  ests = CIs[,1]
-  if (incre) {
-    estsI = pava(y=ests, decreasing = FALSE)
-  } else {
-    estsI = pava(y=ests, decreasing = TRUE)
-  }
-  
-  SE_vecI = pava(y=SE_vec, decreasing = TRUE)
-  
-  if (decre) ind_alt = order((est_vec - 1.96*SE_vecI)[start_h:end_h], decreasing = TRUE)[1] else {
-    ind_alt = order((est_vec + 1.96*SE_vecI)[start_h:end_h])[1]
-  }
-  ind_alt = (start_h:end_h)[ind_alt]
-  
-  CI_lowerI = estsI - 1.96*SE_vecI
-  CI_upperI = estsI + 1.96*SE_vecI
-  CIsI = data.frame(ests = estsI, lower = CI_lowerI, upper = CI_upperI)
-  
-  CI_lowerI_alt = ests - 1.96*SE_vecI
-  CI_upperI_alt = ests + 1.96*SE_vecI
-  CIsI_alt = data.frame(ests = ests, lower = CI_lowerI_alt, upper = CI_upperI_alt)
-  
-  coverI_alt = truth >= CIsI_alt[,2] & truth <= CIsI_alt[,3]
-  
-  if (incre) {
-    m = order(CIsI[,3])[1]
-    indI = max(which(CIsI[,3]==CIsI[m,3]))
-    indI = ifelse(indI == big_ind, indI, indI + 1)
-  } else {
-    m = order(CIsI[,2], decreasing = TRUE)[1]
-    indI = max(which(CIsI[,2]==CIsI[m,2]))
-    indI = ifelse(indI == big_ind, indI, indI + 1)
-  }
-  
-  CIs_all = cbind(CIs, CIsI, CIsI_alt)
-  return(list(CIs_all = CIs_all
-              ,CIs = rbind(CIs[ind, ], CIsI_alt[ind_alt,], CIs[indI, ],  CIsI_alt[indI,], CIs[big_ind,])
-              ,cover = c(cover[ind], coverI_alt[ind_alt], cover[indI], coverI_alt[indI], cover[big_ind])
-              ,truths = c(truth = truth, truth_h = truths_h)
-              ,incre = incre
-              ,inds = c(ind, ind_alt, indI) 
-              ,range = c(start_h, end_h)))
-}
-
-
-sim_bwselect = function(n, blip, truth, truths_h, bw_seq, g0, Q0, kernel)
-{
-  tmledata = gentmledata(n, d = 1, g0, Q0, V=10, formu = NULL)
-  big_ind = length(bw_seq)
-  # undebug(gentmle_alt3)
-  test_bwselect = lapply(bw_seq, FUN = function(h) {
-    gentmle_alt3(initdata=tmledata, estimate_fun = blipdist_estimate2,
-                 update_fun = blipdist_update, max_iter = 1000, kernel = kernel,
-                 simultaneous.inference = FALSE, blip = blip, h = h)
-  })
-  
-  est_vec = unlist(lapply(test_bwselect, FUN = function(x) x$tmleests))
-  est_derivs = vapply(2:length(bw_seq), FUN = function(i) {
-    (est_vec[i]-est_vec[i-1])/.01
-  }, FUN.VALUE = 1)
-  # est_derivs
-  
-  SE_vec = unlist(lapply(1:length(bw_seq), FUN = function(i) {
-    x = test_bwselect[[i]]
-    sqrt((x$ED2 - x$ED^2)/n)
-  }))
-  
-  SE_derivs = vapply(2:length(SE_vec), FUN = function(i) {
-    (SE_vec[i]-SE_vec[i-1])/.01
-  }, FUN.VALUE = 1)
-  # SE_derivs
-  
-  # start at a sensible spot, then depending on increasing or decr psi in h
-  # we travel until no longer helpful
-  for(i in 6:big_ind) {
-    ans = all(sign(est_vec[i:(i-4)] - est_vec[(i-1):(i-5)])>=0) |
-      all(sign(est_vec[i:(i-4)] - est_vec[(i-1):(i-5)])<=0)
-    if (ans) {
-      start_h = i-5 
-      break
-    } else start_h = big_ind
-  }
-  
-  decre = est_vec[start_h+5] < est_vec[start_h+4]
-  for (i in start_h:(big_ind-1)){
-    if (decre) {
-      end_h = i + 1
-      if (!(est_vec[i] >= est_vec[i+1])) {
-        end_h = i
-        break
-      }
-    } else {
-      end_h = i + 1
-      if (!(est_vec[i] <= est_vec[i+1])) {
+      if (!(CIs[i,1] <= CIs[(i+1),1])) {
         end_h = i
         break
       }
     }
   }
   
-  if (decre) ind = order((est_vec - 1.96*SE_vec)[start_h:end_h], decreasing = TRUE)[1] else {
-    ind = order((est_vec + 1.96*SE_vec)[start_h:end_h])[1]
+  if (decre) ind = order(CIs[start_h:end_h,2], decreasing = TRUE)[1] else {
+    ind = order(CIs[start_h:end_h,3])[1]
   }
+  ind = ifelse((start_h:end_h)[ind] == r, r, (start_h:end_h)[ind]+1)
   
-  ind = ifelse((start_h:end_h)[ind] == big_ind, big_ind, (start_h:end_h)[ind]+1)
-  
-  CI_lower = (est_vec - 1.96*SE_vec)[1:big_ind]
-  CI_upper = (est_vec + 1.96*SE_vec)[1:big_ind]
-  
-  CIs = cbind(est_vec[1:big_ind], CI_lower, CI_upper)
-  cover = truth >= CIs[,2] & truth <= CIs[,3]
-  
-  
-  # do linear regresssion and check positivity of coeffcoefficient
-  x = CIs[,1]
-  y = bw_seq[1:big_ind]
-  incre = coef(lm(y~x))[2] >= 0
-  
-  ests = CIs[,1]
-  if (incre) {
-    estsI = pava(y=ests, decreasing = FALSE)
+  if (plus) {
+    SE_vec = (CIs[,3] - CIs[,2])/(2*z_alpha)
+    SE_vecI = pava(y=SE_vec, decreasing = TRUE)
+    
+    if (decre) ind_plus = order((CIs[,1] - z_alpha*SE_vecI)[start_h:end_h], decreasing = TRUE)[1] else {
+      ind_plus = order((CIs[,1] + z_alpha*SE_vecI)[start_h:end_h])[1]
+    }
+    
+    ind_plus = (start_h:end_h)[ind_plus]
+    ind_plus = ifelse(ind_plus==r, r, ind_plus+1)
+    if (SE_vecI[ind_plus] >= SE_vec[ind_plus]) {
+      CI_plus = c(CIs[ind_plus,1], 
+                  CIs[ind_plus,1]-z_alpha*SE_vecI[ind_plus],
+                  CIs[ind_plus,1]+z_alpha*SE_vecI[ind_plus])
+    } else {
+      CI_plus = CIs[ind_plus,]
+    }
+    
+    return(list(CI = CIs[ind,], ind = ind, CI_plus = CI_plus, ind_plus = ind_plus))
+  } else return(list(CI = CIs[ind,], ind = ind))
   } else {
-    estsI = pava(y=ests, decreasing = TRUE)
-  }
-  
-  SE_vecI = pava(y=SE_vec, decreasing = TRUE)
-  CI_lowerI = estsI - 1.96*SE_vecI
-  CI_upperI = estsI + 1.96*SE_vecI
-  CIsI = data.frame(ests = estsI, lower = CI_lowerI, upper = CI_upperI)
-  if (incre) {
-    m = order(CIsI[,3])[1]
-    indI = max(which(CIsI[,3]==CIsI[m,3]))
-    indI = ifelse(indI == big_ind, indI, indI + 1)
-  } else {
-    m = order(CIsI[,2], decreasing = TRUE)[1]
-    indI = max(which(CIsI[,2]==CIsI[m,2]))
-    indI = ifelse(indI == big_ind, indI, indI + 1)
-  }
-  coverI = truth >= CIs[indI,2] & truth <= CIs[indI,3]
-  
-  CIs_all = cbind(CIs, CIsI)
-  return(list(CIs_all = CIs_all
-              ,CIs = rbind(CIs[ind, ], CIs[indI, ], CIs[big_ind,])
-              ,cover = c(cover[ind], coverI, cover[big_ind])
-              ,truths = c(truth = truth, truth_h = truths_h)
-              ,incre = incre
-              ,inds = c(ind, indI) 
-              ,range = c(start_h, end_h)))
+    if (plus) {
+      return(list(CI = CIs[r,], ind = r, CI_plus = CIs[r,], ind_plus = r))
+    } else return(list(CI = CIs[r,], ind = r))
+  } 
 }
+
+#' @export
+bwselect_m = function(ests, SEs, truth = NULL, SE_true = NULL, z_alpha = 1.96)
+{
+  
+  # setting some overall parameters
+  r = length(ests)
+  x = 1:r
+  CIs = ci_form(ests, SEs, z_alpha)
+  incre = coef(lm(ests~x))[2] >= 0
+  
+  # compute SE's
+  SEsI = pava(y=SEs, decreasing = TRUE)
+  
+  w = 1/SEsI/(sum(1/SEsI))
+  
+  #  computing various estimates
+  estsI_wt = pava(y=ests, decreasing = !incre, w=w)
+  
+  # CIs with isotonic SE and true ests
+  CIs_var = ci_form(ests, SEsI, z_alpha)
+  # CIs with isotonic ests and istonics SEs
+  CIsI_var = ci_form(estsI_wt, SEsI, z_alpha)
+  
+  # if we know the true params, use the info to determine incre
+  if (!is.null(truth)) {
+    incre0 = truth$S0 <= truth$S0h
+    if (incre == incre0) {
+      estsI0_wt =  estsI_wt
+      } else estsI0_wt = pava(y=ests, decreasing = !incre0, w=w)
+    
+    # CIs with isotonic ests from true incre indication and isotonic SEs      
+    CIsI0_var = ci_form(estsI0_wt, SEsI, z_alpha)
+    
+    # choose the index based on those CIs
+    ind_I0_var = ind_choose(CIsI0_var, incre0)
+    # bump it up 1
+    ind_I0_var = ifelse(ind_I0_var==r, r, ind_I0_var+1)
+    
+    # if isotonic SE is bigger than estimated SE then choose that CI, otherwise choose the estimated CI
+    if (SEsI[ind_I0_var] >= SEs[ind_I0_var]) {
+      CI_I0_var = CIs_var[ind_I0_var,]
+    } else {
+      CI_I0_var = CIs[ind_I0_var,]
+    }
+    
+  }
+  
+  # If we know the true SE use it
+  if (!is.null(SE_true)) {
+    w0 = 1/SE_true/(sum(1/SE_true))
+    # istonize the ests using true vars as weights and the estimated incre
+    estsI_wt0 = pava(y=ests, decreasing = !incre, w=w0)
+    # isotonize using the true incr and true vars as wts
+    if (incre == incre0) {
+      estsI0_wt0 = estsI_wt0
+      } else estsI0_wt0 = pava(y=ests, decreasing = !incre0, w=w0)
+    
+    # The below two CIs might be the same in incre = incre0
+    CIsI_var0 = ci_form(estsI_wt0, SE_true, z_alpha)
+    CIsI0_var0 = ci_form(estsI0_wt0, SE_true, z_alpha)
+    
+    # CIs with ests using true var
+    CIs_var0 = ci_form(ests, SE_true, z_alpha)
+    
+    ind_I_var0 = ind_choose(CIsI_var0, incre)
+    ind_I0_var0 = ind_choose(CIsI0_var0, incre0)
+    
+    CI_I_var0 = CIsI_var0[ind_I_var0,]
+    CI_I0_var0 = CIsI0_var0[ind_I0_var0,]
+    
+    CI_jl_var0_info = bwselect_jl(CIs_var0[,1], SE_true, len = 5, plus = FALSE, z_alpha = z_alpha)
+    ind_jl_var0 = ifelse(CI_jl_var0_info$ind==r, r, CI_jl_var0_info$ind-1)
+    CI_jl_var0 = CIs_var0[ind_jl_var0,]
+  }
+  
+  # get jl method estimates
+  CI_jl_info = bwselect_jl(ests = ests, SEs = SEs, len = 5, plus = TRUE, z_alpha = z_alpha)
+  CI_jl = CI_jl_info$CI
+  CI_jl_var = CI_jl_info$CI_plus
+  ind_jl = CI_jl_info$ind
+  ind_jl_var = CI_jl_info$ind_plus
+  
+  ind_I_var = ind_choose(CIsI_var, incre)
+  ind_I_var = ifelse(ind_I_var==r, r, ind_I_var+1)
+  
+  if (SEsI[ind_I_var] >= SEs[ind_I_var]) {
+    CI_I_var = CIs_var[ind_I_var,]
+  } else {
+    CI_I_var = CIs[ind_I_var,]
+  }
+  
+  CIr = CIs[r,]
+  if (!is.null(SE_true) & !is.null(truth)) {
+    return(list(CI_jl = CI_jl, ind_jl = ind_jl, 
+                CI_jl_var = CI_jl_var, ind_jl_var = ind_jl_var,
+                CI_jl_var0 = CI_jl_var0, ind_jl_var0 = ind_jl_var0,
+                CI_I_var = CI_I_var, ind_I_var = ind_I_var,
+                CI_I0_var = CI_I_var, ind_I0_var = ind_I0_var,
+                CI_I_var0 = CI_I_var0, ind_I_var0 = ind_I_var0,
+                CI_I0_var0 = CI_I0_var0, ind_I0_var0 = ind_I0_var0,
+                CIr = CIr,
+                mono = incre==incre0))
+  } else {
+    return(list(CI_jl = CI_jl, ind_jl = ind_jl, 
+                CI_jl_var = CI_jl_var, ind_jl_var = ind_jl_var,
+                CI_I_var = CI_I_var, ind_I_var = ind_I_var,
+                CIr = CIr,
+                mono = incre==incre0))
+  }
+}
+
+
