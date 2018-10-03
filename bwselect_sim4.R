@@ -35,7 +35,7 @@ for (j in 4) {
   # j=1
   kernel = kernel_list[[j]]
   for (size in c(1000,2500,5000,10000,25000,50000)) {
-    # n=10000
+    # size=1000
     degree = length(kernel_list$veck)/2+1
     bw = size^-(1/(2*degree+3))
     step = round(bw/20, 3)
@@ -47,7 +47,7 @@ for (j in 4) {
       truth = mean(true$blip> blip)
       B = 1000
       # cl_size = ifelse(n > 10000, 12, 24)
-      cl = makeCluster(24, type = "SOCK")
+      cl = makeCluster(8, type = "SOCK")
       registerDoSNOW(cl)
       
       allresults=foreach(i=1:B,
