@@ -34,7 +34,7 @@ blips = seq(m, M, .01)
 for (j in 5) {
   # j=1
   kernel = kernel_list[[j]]
-  for (size in c(1000,2500,5000,10000,25000,50000)) {
+  for (size in c(25000,50000)) {
     # n=10000
     degree = length(kernel_list$veck)/2+1
     bw = size^-(1/(2*degree+3))
@@ -46,7 +46,7 @@ for (j in 5) {
       blip = blips[a]
       truth = mean(true$blip> blip)
       B = 1000
-      cl = makeCluster(8, type = "SOCK")
+      cl = makeCluster(4, type = "SOCK")
       registerDoSNOW(cl)
       
       allresults=foreach(i=1:B,
