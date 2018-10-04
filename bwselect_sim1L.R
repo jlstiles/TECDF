@@ -53,7 +53,7 @@ for (j in 1) {
                          ,.errorhandling='remove'
       )%dopar%
       {
-        info = sim_bwselect(size, blip, bw_seq, g0, Q0, kernel, zscore = NULL)
+        info = sim_bwselect(size, blip, bw_seq, g0, Q0, k, zscore = NULL)
         return(list(ests = info$ests, SE = info$SE))
     }
     nname = (paste0("results_selector/bwselect_", size, "_", a,"_kernel", j, ".RData"))
