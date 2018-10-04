@@ -32,7 +32,7 @@ blips = seq(m, M, .01)
 # but here we will get simultaneous inference and proceed as before
 
 for (j in 5) {
-  kernel = kernel_list[[j]]
+  k = kernel_list[[j]]
   for (size in c(25000, 50000)) {
     degree = 2*length(k$veck)-5
     bw = size^-(1/(2*degree+3))
