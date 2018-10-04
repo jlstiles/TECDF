@@ -8,7 +8,7 @@ sim_bwselect = function(n, blip, bw_seq, g0, Q0, kernel, zscore = NULL)
     info = gentmle_alt(initdata=tmledata, estimate_fun = blipdist_estimate,
                         update_fun = blipdist_update, max_iter = 1000, kernel = kernel,
                         simultaneous.inference = FALSE, blip = blip, h = h)
-    return(return(list(est = info$tmleests, IC = info$Dstar, SE = info$ED2-mean(info$Dstar)^2)))
+    return(return(list(est = info$tmleests, IC = info$Dstar, SE = sqrt(info$ED2-mean(info$Dstar)^2))))
   })
   
   ests = vapply(1:r, FUN = function(x) {
