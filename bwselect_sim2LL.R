@@ -31,9 +31,9 @@ blips = seq(m, M, .01)
 # up to here we have kept the simulation the same as CVbwselect2
 # but here we will get simultaneous inference and proceed as before
 
-for (j in 3) {
+for (j in 2) {
   k = kernel_list[[j]]
-  for (size in c(25000)) {
+  for (size in c(50000)) {
     degree = 2*length(k$veck)-5
     bw = size^-(1/(2*degree+3))
     step = round(bw/20, 3)
@@ -44,7 +44,6 @@ for (j in 3) {
       blip = blips[a]
       truth = mean(true$blip> blip)
       B = 1000
-      # cl_size = ifelse(n > 10000, 12, 24)
       cl = makeCluster(4, type = "SOCK")
       registerDoSNOW(cl)
       

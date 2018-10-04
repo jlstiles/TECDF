@@ -31,14 +31,14 @@ blips = seq(m, M, .01)
 # up to here we have kept the simulation the same as CVbwselect2
 # but here we will get simultaneous inference and proceed as before
 
-for (j in 3) {
+for (j in 1) {
   k = kernel_list[[j]]
-  for (size in c(25000)) {
+  for (size in c(50000)) {
     degree = 2*length(k$veck)-5
     bw = size^-(1/(2*degree+3))
     step = round(bw/20, 3)
     bw_seq = seq(step, 20*step, step)
-    
+
     for (a in seq(6,48,6)) {
       # a = 48
       blip = blips[a]
@@ -55,9 +55,10 @@ for (j in 3) {
       {
         info = sim_bwselect(size, blip, bw_seq, g0, Q0, k, zscore = NULL)
         return(list(ests = info$ests, SE = info$SE))
-      }
-      nname = (paste0("results_selector/bwselect_", size, "_", a,"_kernel", j, ".RData"))
-      save(allresults, file = nname)
+    }
+    nname = (paste0("results_selector/bwselect_", size, "_", a,"_kernel", j, ".RData"))
+    save(allresults, file = nname)
     }
   }
 }
+

@@ -33,7 +33,7 @@ blips = seq(m, M, .01)
 
 for (j in 1) {
   k = kernel_list[[j]]
-  for (size in c(25000, 50000)) {
+  for (size in c(25000)) {
     degree = 2*length(k$veck)-5
     bw = size^-(1/(2*degree+3))
     step = round(bw/20, 3)
