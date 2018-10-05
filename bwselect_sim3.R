@@ -32,17 +32,17 @@ blips = seq(m, M, .01)
 # but here we will get simultaneous inference and proceed as before
 
 for (j in 3) {
-  j=3
+  # j=3
   k = kernel_list[[j]]
   for (size in c(1000, 2500, 5000, 10000)) {
-    size = 1000
+    # size = 1000
     degree = 2*length(k$veck)-5
     bw = size^-(1/(2*degree+3))
     step = round(bw/20, 3)
     bw_seq = seq(step, 20*step, step)
     
     for (a in seq(6,48,6)) {
-      a = 48
+      # a = 48
       blip = blips[a]
       truth = mean(true$blip> blip)
       B = 1000
