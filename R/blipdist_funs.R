@@ -40,19 +40,19 @@ blipdist_estimate <- function(tmledata, b, h, kernel) {
   B = tmledata$Q[,"Q1W"]-tmledata$Q[,"Q0W"]
   
   int = vapply(b, FUN = function(x0) {
-      w = with(kernel, kern_cdf((B - x0)/h, R=R, veck=veck))
+      w = 1-with(kernel, kern_cdf((B - x0)/h, R=R, veck=veck))
       return(w)
   } ,FUN.VALUE=rep(1,nn))
   tmledata$ests = apply(int, 2, mean)
 
   tmledata$HAW = vapply(b, FUN = function(x) {
-    (1/h)*with(kernel, kern((B-x)/h, R=R, veck=veck))*with(tmledata, A/g1W-(1-A)/(1-g1W))
+    (-1/h)*with(kernel, kern((B-x)/h, R=R, veck=veck))*with(tmledata, A/g1W-(1-A)/(1-g1W))
   } ,FUN.VALUE= rep(1,nn))
   tmledata$H0W = vapply(b, FUN = function(x) {
-    (1/h)*with(kernel, kern((B-x)/h, R=R, veck=veck))*(-1/(1-tmledata$g1W))
+    (-1/h)*with(kernel, kern((B-x)/h, R=R, veck=veck))*(-1/(1-tmledata$g1W))
   }, FUN.VALUE= rep(1,nn))
   tmledata$H1W = vapply(b, FUN = function(x) {
-    (1/h)*with(kernel, kern((B-x)/h, R=R, veck=veck))*(1/tmledata$g1W)
+    (-1/h)*with(kernel, kern((B-x)/h, R=R, veck=veck))*(1/tmledata$g1W)
   }, FUN.VALUE= rep(1,nn))
   
   tmledata$Dstar <- vapply(1:length(b),FUN = function(x) with(tmledata, HAW[,x]*(Y-Q[,"QAW"])+

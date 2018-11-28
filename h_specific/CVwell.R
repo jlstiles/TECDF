@@ -80,11 +80,11 @@ for (n in c(1000, 2500, 5000, 10000, 25000, 50000)) {
 }
 
 
-# coverage = mean(unlist(lapply(allresults, FUN = function(x) {
-#   all(x$resglm_simul[,6]==TRUE)
-# })))
-# 
-# coverage
+coverage = mean(unlist(lapply(allresults, FUN = function(x) {
+  all(x$resglm_simul[,6]==TRUE)
+})))
+
+coverage
 
 #   res_hal = data.matrix(do.call(rbind, allresults_hal))
 #   res_hal = as.data.frame(res_hal)

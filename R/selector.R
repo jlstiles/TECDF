@@ -8,8 +8,8 @@ bwselect_jl = function(ests, SEs, len, plus = TRUE, z_alpha = 1.96)
   
   r = nrow(CIs)
   for(i in (len+1):r) {
-    ans = all(sign(CIs[i:(i + 1 - len),1] - CIs[(i-1):(i - len),1]) >= 0) |
-      all(sign(CIs[i:(i-4),1] - CIs[(i-1):(i-5),1]) <= 0)
+    ans = all(sign(CIs[i:(i + 1 - len), 1] - CIs[(i - 1):(i - len), 1]) >= 0) |
+      all(sign(CIs[i:(i + 1 - len), 1] - CIs[(i-1):(i - len), 1]) <= 0)
     if (ans) {
       start_h = i-5 
       break

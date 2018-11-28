@@ -34,9 +34,9 @@ gendata.blip=function(n, d, g0, Q0){
 #' @export 
 get.truth = function(t, h, kernel, d, g0, Q0) {
   # create the kernel according to specs
+  B = gendata.blip(3e6, d, g0, Q0)$blip
   vapply(t, FUN = function(x0) {
     t(vapply(h, FUN = function(bw) {
-      B = gendata.blip(2e6, d, g0, Q0)$blip
       int = with(kernel, kern_cdf(x=(B - x0)/bw, R = R, veck = veck))
       truth_h = mean(int)
       truth = mean(B>=x0)
@@ -313,7 +313,7 @@ gentmledata_hal = function(n, d, g0, Q0, V, RCT = FALSE, formu = NULL) {
 
 
 #' @export 
-get_results = function(allresults, n, L) {
+get_results_survtoCDF = function(allresults, n, L,blips) {
   cover_hal_simul = mean(unlist(lapply(allresults, FUN = function(x) {
     all(x$reshal_simul[,6]==TRUE)
   })))
@@ -348,13 +348,13 @@ get_results = function(allresults, n, L) {
   
   est_hal_simul = lapply(1:L, FUN = function(b){
     unlist(lapply(allresults, FUN = function(x) {
-      x$reshal_simul[b,1]
+      1-x$reshal_simul[b,1]
     }))
   })
   
   est_glm_simul = lapply(1:L, FUN = function(b){
     unlist(lapply(allresults, FUN = function(x) {
-      x$resglm_simul[b,1]
+      1-x$resglm_simul[b,1]
     }))
   })
   
@@ -364,12 +364,12 @@ get_results = function(allresults, n, L) {
     return(xx)
   })
   
-  truths = vapply(1:L, FUN = function(b) allresults[[1]]$reshal_simul[b,"truth"], FUN.VALUE = 1)
+  truths = vapply(1:L, FUN = function(b) 1-allresults[[1]]$reshal_simul[b,"truth"], FUN.VALUE = 1)
   
   est_hal = lapply(1:L, FUN = function(b){
     xx = lapply(c(1,4) , FUN = function(i) {
       unlist(lapply(allresults, FUN = function(x) {
-        x$reshal[[b]]$info[1,i]
+        1-x$reshal[[b]]$info[1,i]
       }))
     })
     xx = do.call(cbind, xx)
@@ -380,7 +380,7 @@ get_results = function(allresults, n, L) {
   est_glm = lapply(1:L, FUN = function(b){
     xx = lapply(c(1,4) , FUN = function(i) {
       unlist(lapply(allresults, FUN = function(x) {
-        x$resglm[[b]]$info[1,i]
+        1-x$resglm[[b]]$info[1,i]
       }))
     })
     xx = do.call(cbind, xx)
@@ -423,8 +423,8 @@ get_results = function(allresults, n, L) {
       scale_fill_manual(values=colors)+
       scale_color_manual(values=colors)+
       theme(axis.title.x = element_blank())+
-      ggtitle("CATE 'survival' Sampling Dists", 
-              subtitle = paste0("n = ", n, ", t = ",round(truths[x],4),", bw = ", round(bw,4)))  
+      ggtitle("CDF of blip Sampling Dists", 
+              subtitle = paste0("n = ", n, ", t = ",blips[x],", bw = ", round(bw,4)))  
     ggover = ggover+geom_vline(xintercept = S_t,color="black")+
       geom_vline(xintercept=mean(res_temp[,inds[1]]),color = colors[1])+
       geom_vline(xintercept=mean(res_temp[,inds[2]]),color = colors[2])+
@@ -440,7 +440,7 @@ get_results = function(allresults, n, L) {
 }
 
 #' @export 
-get_results_well = function(allresults, n, L, suffix = "well") {
+get_results_well_survtoCDF = function(allresults, n, L, suffix = "well", blips) {
   cover_well_simul = mean(unlist(lapply(allresults, FUN = function(x) {
     all(x$resglm_simul[,6]==TRUE)
   })))
@@ -462,17 +462,17 @@ get_results_well = function(allresults, n, L, suffix = "well") {
   
   est_well_simul = lapply(1:L, FUN = function(b){
     unlist(lapply(allresults, FUN = function(x) {
-      x$resglm_simul[b,1]
+      1-x$resglm_simul[b,1]
     }))
   })
 
   
-  truths = vapply(1:L, FUN = function(b) allresults[[1]]$resglm_simul[b,"truth"], FUN.VALUE = 1)
+  truths = 1-vapply(1:L, FUN = function(b) allresults[[1]]$resglm_simul[b,"truth"], FUN.VALUE = 1)
 
   est_well = lapply(1:L, FUN = function(b){
     xx = lapply(c(1,4) , FUN = function(i) {
       unlist(lapply(allresults, FUN = function(x) {
-        x$resglm[[b]]$info[1,i]
+        1-x$resglm[[b]]$info[1,i]
       }))
     })
     xx = do.call(cbind, xx)
@@ -519,8 +519,8 @@ get_results_well = function(allresults, n, L, suffix = "well") {
       scale_fill_manual(values=colors)+
       scale_color_manual(values=colors)+
       theme(axis.title.x = element_blank())+
-      ggtitle("CATE 'survival' Sampling Dists", 
-              subtitle = paste0("n = ", n, ", t = ",round(truths[x],4),", bw = ", round(bw,4)))  
+      ggtitle("CDF of blip Sampling Dists", 
+              subtitle = paste0("n = ", n, ", t = ",blips[x],", bw = ", round(bw,4)))  
     ggover = ggover+geom_vline(xintercept = S_t,color="black")+
       geom_vline(xintercept=mean(res_temp[,inds[1]]),color = colors[1])+
       geom_vline(xintercept=mean(res_temp[,inds[2]]),color = colors[2])+

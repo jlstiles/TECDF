@@ -28,38 +28,38 @@ t = seq(m, M, .01)
 blip = seq(8,64,8)
 
 # define kernel
-kernel = make_kernel(degree = NULL,R = 1)
+kernel = make_kernel(degree = 4,R = 2)
 n=2500
 truth_h = get.truth(t = t[blip], h = n^-.2, kernel = kernel, d = 1, g0 = g0, Q0 = Q0)
-truth_h = truth_h$truth_h
+truth_h 
 
 # FXING wrong kernel being used for truth CVhalglm0_2500 and CVhalglm_1000
-allresults = lapply(allresults, FUN = function(x) {
-  # x = allresults[[1]]
-  x$reshal_simul[,5] = truth_h
-  x$resglm_simul[,5] = truth_h
-  for (a in 1:length(blip)) {
-    x$reshal[[a]]$info[5] =  truth_h[a]
-    x$resglm[[a]]$info[5] =  truth_h[a]
-}
-    return(x)
-})
+# allresults = lapply(allresults, FUN = function(x) {
+#   # x = allresults[[1]]
+#   x$reshal_simul[,5] = truth_h
+#   x$resglm_simul[,5] = truth_h
+#   for (a in 1:length(blip)) {
+#     x$reshal[[a]]$info[5] =  truth_h[a]
+#     x$resglm[[a]]$info[5] =  truth_h[a]
+# }
+#     return(x)
+# })
 
-allresults = lapply(allresults, FUN = function(x) {
-  x$reshal_simul[,6] = (x$reshal_simul[,2] <=  x$reshal_simul[,5]) & 
-    (x$reshal_simul[,3] >=  x$reshal_simul[,5])
-  x$resglm_simul[,6] = (x$resglm_simul[,2] <=  x$resglm_simul[,5]) & 
-    (x$resglm_simul[,3] >=  x$resglm_simul[,5])
-  for (a in  1:length(blip)) {
-    tt = (x$reshal[[a]]$info[2] <=  x$reshal[[a]]$info[5]) & 
-      (x$reshal[[a]]$info[3] >=  x$reshal[[a]]$info[5])
-    x$reshal[[a]]$info[6] = tt
-    tt = (x$resglm[[a]]$info[2] <=  x$resglm[[a]]$info[5]) & 
-      (x$resglm[[a]]$info[3] >=  x$resglm[[a]]$info[5])
-    x$resglm[[a]]$info[6] = tt
-  }
-  return(x)
-})
+# allresults = lapply(allresults, FUN = function(x) {
+#   x$reshal_simul[,6] = (x$reshal_simul[,2] <=  x$reshal_simul[,5]) & 
+#     (x$reshal_simul[,3] >=  x$reshal_simul[,5])
+#   x$resglm_simul[,6] = (x$resglm_simul[,2] <=  x$resglm_simul[,5]) & 
+#     (x$resglm_simul[,3] >=  x$resglm_simul[,5])
+#   for (a in  1:length(blip)) {
+#     tt = (x$reshal[[a]]$info[2] <=  x$reshal[[a]]$info[5]) & 
+#       (x$reshal[[a]]$info[3] >=  x$reshal[[a]]$info[5])
+#     x$reshal[[a]]$info[6] = tt
+#     tt = (x$resglm[[a]]$info[2] <=  x$resglm[[a]]$info[5]) & 
+#       (x$resglm[[a]]$info[3] >=  x$resglm[[a]]$info[5])
+#     x$resglm[[a]]$info[6] = tt
+#   }
+#   return(x)
+# })
 
 
 
@@ -69,10 +69,32 @@ allresults = append(allresults1, allresults)
 
 # save(allresults, file = "results/CVhalglm0_2500.RData")
 # for hal vs glm
-results = cateSurvival::get_results(allresults, n=1000, L = 8)
-results$cover_hal_simul
-results$cover_glm_simul
-results$plots
+results = cateSurvival::get_results(allresults, n=2500, L = 8, blips = t[blip])
+plots = results$plots
+cov_simul = c(results$cover_hal_simul, results$cover_glm_simul)
+cov_ind = cbind(results$cover_hal, results$cover_glm)
+cov = rbind(cov_simul, cov_ind)
+colnames(cov) = c("TMLE_hal", "TMLE_glm")
+rownames(cov)[2:9] = paste0("blip = ", t[blip])
+stargazer::stargazer(cov)
+cov
+
+plots = lapply(plots, FUN = function(p) {
+  capt = paste0("Truth = Pr(blip > t) at black line")
+  p = ggdraw(add_sub(p,capt, x= 0, y = 0.5, hjust = 0, vjust = 0.5,
+                     vpadding = grid::unit(1, "lines"), fontfamily = "", 
+                     fontface = "plain",colour = "black", size = 14, angle = 0, 
+                     lineheight = 0.9))
+})
+plots
+MSE = do.call(rbind,lapply(results$mse, FUN = function(x) x[c(3,5),3]))
+MSE
+
+
+ggover=ggdraw(add_sub(ggover,capt, x= 0, y = 0.5, hjust = 0, vjust = 0.5,
+                      vpadding = grid::unit(1, "lines"), fontfamily = "", 
+                      fontface = "plain",colour = "black", size = 14, angle = 0, 
+                      lineheight = 0.9))
 # results1$plots[[8]]
 unlist(results$cover_hal)
 unlist(results$cover_glm)
@@ -115,6 +137,7 @@ results = cateSurvival::get_results_well(allresults, n=1000, L = 8)
 results$plots
 results$cover_well_simul
 results$cover_well
+results$mse
 
 plot1000unifsimul_halglm = arrangeGrob(info$plots[[1]], 
                                         info$plots[[2]], 
