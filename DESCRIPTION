@@ -1,6 +1,6 @@
-Package: cateSurvival
+Package: blipCDF
 type: Package
-Title: CATE Survival
+Title: blip CDF
 Version: 0.1.0
 Author: Jonathan Levy <jlstilesmusic@gmail.com>
 Maintainer: Jonathan Levy <jlstilesmusic@gmail.com>
