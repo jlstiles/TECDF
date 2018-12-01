@@ -1,1 +1,1 @@
-# cateSurvival
+To install blipCDF, devtools::install.github("jlstiles/blipCDF")
