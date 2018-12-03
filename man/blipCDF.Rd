@@ -33,11 +33,10 @@ data_example$Y[1:6]
 data_example$A[1:6]
 data_example$g1W[1:6]
 
-t = seq(m, M, .01)
-blip = t[seq(12, 48, 6)]
+blip = seq(-0.08,0.3, .06)
 
 # make polynomial kernel of order 9
-k=make_kernel(degree=12,R=5)
+k=make_kernel(order=6,R=5)
 
 est.info = blipCDF(initdata = data_example, kernel = k, blip = blip, h = .1, 
                    max_iter = 1000, simultaneous.inference = TRUE)
