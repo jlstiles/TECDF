@@ -1,4 +1,4 @@
-#' @export
+
 bwselect_jl = function(ests, SEs, len, plus = TRUE, z_alpha = 1.96)
 {
   # form the CI's' according to z_alpha
@@ -66,7 +66,6 @@ bwselect_jl = function(ests, SEs, len, plus = TRUE, z_alpha = 1.96)
   } 
 }
 
-#' @export
 bwselect_m = function(ests, SEs, truth = NULL, SE_true = NULL, z_alpha = 1.96)
 {
   

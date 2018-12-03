@@ -2,16 +2,6 @@ library(boot)
 ############## somewhat general TMLE framework takes initial data, an estimation function and an update
 ############## function can be used for arbitrary TMLEs
 
-#' @title gentmle
-#' @description General TMLE function that takes care of the bookkeeping of estimation and update steps.
-#'
-#' @param estimate_fun Function for estimation step
-#' @param update_fun, Function for update step
-#' @param max_iter, Maximum number of iteration steps
-#' @param N, controls order criterion, currently not used
-#' @param simultaneous.inference, passed to the 
-#' @param ..., Extra arguments that can be passed to update_fun and estimate_fun
-#' @export
 gentmle_alt <- function(initdata, estimate_fun, update_fun, max_iter = 100, N=NULL
                         ,simultaneous.inference = TRUE, kernel = NULL, blip = NULL, h = NULL, ...) {
   
