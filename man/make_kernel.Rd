@@ -17,12 +17,12 @@ a list containing coefficients of the even polynomial kernel, veck, Range, R,
 and functions for the kernel and its cdf, kern and kern_cdf.
 }
 \description{
-constructs polynomial kernels up to order 10
+constructs polynomial kernels
 }
 \examples{
-# making polynomial kernel degree 12, which is an order 10 kernel with support -5 to 5 and 
-# smooth at -5 and 5. 
-order = 10
+# making polynomial kernel degree 12, which is an order 12 kernel with support -5 to 5 and 
+# smooth at -5 and 5. Order must be 2 or greater as all kernels are mean 0 and symmetric
+order = 2
 R = 5
 k=blipCDF:::make_kernel(order,R)
 

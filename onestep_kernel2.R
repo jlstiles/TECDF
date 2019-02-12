@@ -7,8 +7,8 @@ library(cowplot)
 library(parallel)
 library(doSNOW)
 
-degree = 6
-R = 4
+degree = 14
+R = 3
 kernel = make_kernel(degree, R)
 # integrate to 1?
 kernel$veck
@@ -24,13 +24,13 @@ plot
 
 # check orthogonality (first val should be the area of 1)
 
-test_fcn = as.data.frame(vapply(0:(degree-3), FUN = function(r) {
+test_fcn = as.data.frame(vapply(0:(degree+2), FUN = function(r) {
   test_fcn = function(x) (x^r)*with(kernel, kern(x, R=R, veck = veck))
   test_int = integrate(test_fcn, lower = -R, upper = R,subdivisions = 10000)
   return(c(test_int$abs.error, test_int$value))
 }, FUN.VALUE = c(1,1)))
 rownames(test_fcn) = c("abs_error", "integral")
-colnames(test_fcn) = as.character(0:(degree - 3))
+colnames(test_fcn) = as.character(0:(degree+2))
 test_fcn
 
 # Define th DGP functions for SCM

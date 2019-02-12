@@ -1,5 +1,5 @@
 #' @title make_kernel
-#' @description constructs polynomial kernels up to order 10
+#' @description constructs polynomial kernels
 #' @param order, the degree of the 1st non-zero moment, an even number since all these kernels
 #' are orthogonal to odd polynomials.  If NULL then a uniform kernel is constructed
 #' @param R, support is -R to R and kernel is smooth at the boundary
@@ -9,7 +9,7 @@
 #' @export
 make_kernel = function(order, R){
   if (order/2 != floor(order/2)) stop("order must be even")
-
+  if (order < 2) stop("order is atleast 2")
   if (is.null(order)) {
     kern = function(x, R, veck) 1/(2*R)*as.numeric(-R <= x & R >= x) 
     kern_cdf = function(x, R, veck) (1/(2*R))*as.numeric(x > -R)*(pmin(x ,R)+R)

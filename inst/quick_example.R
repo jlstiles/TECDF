@@ -7,7 +7,8 @@ data_example$g1W[1:6]
 
 blip = seq(-0.08,0.3, .06)
 
-# make polynomial kernel of order 9
+# make polynomial kernel of order 7. Note, you can only input even degrees for the kernel which 
+# will be the highest degree
 k=make_kernel(order=6,R=5)
 
 est.info = blipCDF(initdata = data_example, kernel = k, blip = blip, h = .1, 
