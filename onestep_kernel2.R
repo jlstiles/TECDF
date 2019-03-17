@@ -7,7 +7,7 @@ library(cowplot)
 library(parallel)
 library(doSNOW)
 
-degree = 14
+degree = 4
 R = 3
 kernel = make_kernel(degree, R)
 # integrate to 1?

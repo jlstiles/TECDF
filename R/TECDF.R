@@ -1,5 +1,5 @@
-#' @title blipCDF
-#' @description computes kernel smoothed treatment effect or blip CDF
+#' @title TECDF
+#' @description computes kernel smoothed treatment effect or Treatment Effect CDF
 #' @param initdata a list with elements Q, a data.frame with columns named QAW, Q1W, Q0W for initial 
 #' predictions for the outcome, outcome under A=1 and under A=0, resp. A, a vector of binary 
 #' treatment assignments and Y, the outcome and g1W, a vector of propensity scores. 
@@ -10,10 +10,10 @@
 #' @param simultaneous.inference, do you want to compute simultaneous CI's (see ci_gentmle) 
 #' @example /inst/quick_example.R  
 #' @export
-blipCDF = function(initdata=initdata, kernel = kernel, blip, h, 
+TECDF = function(initdata=initdata, kernel = kernel, blip, h, 
                    max_iter = 100, simultaneous.inference = TRUE)  {
-  estimate_fun = blipdist_estimate
-  update_fun = blipdist_update
+  estimate_fun = TEdist_estimate
+  update_fun = TEdist_update
     
     # create the kernel according to specs
     converge <- F
