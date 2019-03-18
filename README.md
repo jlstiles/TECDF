@@ -1,1 +1,1 @@
-To install blipCDF, devtools::install_github("jlstiles/blipCDF")
+To install blipCDF, devtools::install_github("jlstiles/TECDF")
