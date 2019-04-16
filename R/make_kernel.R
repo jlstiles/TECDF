@@ -8,13 +8,13 @@
 #' @example /inst/make_kernel_example.R 
 #' @export
 make_kernel = function(order, R){
-  if (order/2 != floor(order/2)) stop("order must be even")
-  if (order < 2) stop("order is atleast 2")
   if (is.null(order)) {
     kern = function(x, R, veck) 1/(2*R)*as.numeric(-R <= x & R >= x) 
     kern_cdf = function(x, R, veck) (1/(2*R))*as.numeric(x > -R)*(pmin(x ,R)+R)
     veck = 1
   } else {
+    if (order/2 != floor(order/2)) stop("order must be even")
+    if (order < 2) stop("order is atleast 2")
     kk = (order+2)/2-2
     area_row = vapply(0:(kk+2), FUN = function(i) 2*R^(2*i+1)/(2*i+1), FUN.VALUE = 1)
     zero_row = vapply(0:(kk+2), FUN = function(i) R^(2*i), FUN.VALUE = 1)

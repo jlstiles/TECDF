@@ -1,6 +1,4 @@
-#' @title blipdist_update
-#' @description helper function that bookeeps tmle updating the outcome
-#' @export
+
 blipdist_update <- function(tmledata, Q.trunc = 1e-04) {
   eps_q <- 0
   # fluctuate Q
@@ -36,9 +34,8 @@ blipdist_update <- function(tmledata, Q.trunc = 1e-04) {
   return(tmledata)
 }
 
-#' @title blipdist_update
-#' @description helper function that bookeeps recomputing the IC
-#' @export
+
+
 blipdist_estimate <- function(tmledata, b, h, kernel) {
   nn <- length(tmledata$Y) 
   B = tmledata$Q[,"Q1W"]-tmledata$Q[,"Q0W"]

@@ -4,7 +4,7 @@
 \alias{TECDF}
 \title{TECDF}
 \usage{
-TECDF(initdata = initdata, kernel = kernel, blip, h, max_iter = 100,
+TECDF(initdata = initdata, kernel = kernel, TE, h, max_iter = 100,
   simultaneous.inference = TRUE)
 }
 \arguments{
@@ -14,13 +14,13 @@ treatment assignments and Y, the outcome and g1W, a vector of propensity scores.
 
 \item{kernel, }{see make_kernel}
 
-\item{blip, }{a vector of treatment effect value(s).}
-
 \item{h, }{the bandwidth}
 
 \item{max_iter, }{Maximum number of iteration steps}
 
 \item{simultaneous.inference, }{do you want to compute simultaneous CI's (see ci_gentmle)}
+
+\item{blip, }{a vector of treatment effect value(s).}
 }
 \description{
 computes kernel smoothed treatment effect or Treatment Effect CDF
@@ -33,16 +33,16 @@ data_example$Y[1:6]
 data_example$A[1:6]
 data_example$g1W[1:6]
 
-blip = seq(-0.08,0.3, .06)
+TE = seq(-0.08,0.3, .06)
 
-# make polynomial kernel of order 7. Note, you can only input even degrees for the kernel which 
+# make polynomial kernel of order 6. Note, you can only input even degrees for the kernel which 
 # will be the highest degree
 k=make_kernel(order=6,R=5)
 
-est.info = blipCDF(initdata = data_example, kernel = k, blip = blip, h = .1, 
+est.info = TECDF(initdata = data_example, kernel = k, TE = TE, h = .1, 
                    max_iter = 1000, simultaneous.inference = TRUE)
 
-plot(blip, est.info$tmleests)
+plot(TE, est.info$tmleests)
 # tmle estimates
 est.info$tmleests
 # steps to convergence

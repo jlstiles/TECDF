@@ -10,7 +10,7 @@
 #' @param simultaneous.inference, do you want to compute simultaneous CI's (see ci_gentmle) 
 #' @example /inst/quick_example.R  
 #' @export
-TECDF = function(initdata=initdata, kernel = kernel, blip, h, 
+TECDF = function(initdata=initdata, kernel = kernel, TE, h, 
                    max_iter = 100, simultaneous.inference = TRUE)  {
   estimate_fun = TEdist_estimate
   update_fun = TEdist_update
@@ -20,7 +20,7 @@ TECDF = function(initdata=initdata, kernel = kernel, blip, h,
     n=length(initdata$Y)
     # cat(sprintf('bw: %f\n',bw))
     if (!is.null(kernel)) {
-      eststep <- estimate_fun(tmledata=initdata, b=blip, h=h, kernel=kernel)
+      eststep <- estimate_fun(tmledata=initdata, b = TE, h=h, kernel=kernel)
     } else {
       eststep <- estimate_fun(tmledata=initdata)
     }
@@ -38,7 +38,7 @@ TECDF = function(initdata=initdata, kernel = kernel, blip, h,
       #         break}
       updatestep <- update_fun(tmledata=eststep)
       if (!is.null(kernel)) {
-        eststep <- estimate_fun(tmledata=updatestep, b=blip, h=h, kernel=kernel)
+        eststep <- estimate_fun(tmledata=updatestep, b=TE, h=h, kernel=kernel)
       } else {
         eststep <- estimate_fun(tmledata=updatestep)
       }
