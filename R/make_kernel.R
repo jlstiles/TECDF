@@ -1,10 +1,13 @@
 #' @title make_kernel
 #' @description constructs polynomial kernels
-#' @param order, the degree of the 1st non-zero moment, an even number since all these kernels
-#' are orthogonal to odd polynomials.  If NULL then a uniform kernel is constructed
-#' @param R, support is -R to R and kernel is smooth at the boundary
-#' @return  a list containing coefficients of the even polynomial kernel, veck, Range, R,  
-#' and functions for the kernel and its cdf, kern and kern_cdf.  
+#' @param order, the degree polynomial where all polynomials of equal degree or 
+#' lower are orthogonal to the kernel.  This is an an odd number, since all these kernels
+#' are orthogonal to odd polynomials.  If NULL then a uniform kernel is constructed, which
+#' is degree 1.  
+#' @param R, support is -R to R and kernel is smooth at the boundary with derivative
+#' of zero at the boundary.
+#' @return  a list containing coefficients of the highest even polynomial kernel, veck, Range, R,  
+#' and functions for the kernel and its cdf (kern and kern_cdf)s.  
 #' @example /inst/make_kernel_example.R 
 #' @export
 make_kernel = function(order, R){
@@ -13,9 +16,9 @@ make_kernel = function(order, R){
     kern_cdf = function(x, R, veck) (1/(2*R))*as.numeric(x > -R)*(pmin(x ,R)+R)
     veck = 1
   } else {
-    if (order/2 != floor(order/2)) stop("order must be even")
-    if (order < 2) stop("order is atleast 2")
-    kk = (order+2)/2-2
+    if ((order+1)/2 != floor((order+1)/2)) stop("order must be odd")
+    
+    kk = order/2 - 1/2
     area_row = vapply(0:(kk+2), FUN = function(i) 2*R^(2*i+1)/(2*i+1), FUN.VALUE = 1)
     zero_row = vapply(0:(kk+2), FUN = function(i) R^(2*i), FUN.VALUE = 1)
     deriv_row = c(0,vapply(0:(kk+1), FUN = function(i) 2*(i + 1)*R^(2*i+1), FUN.VALUE = 1))

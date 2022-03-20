@@ -50,6 +50,7 @@ est.info$steps
 # mean of the influence curves
 est.info$ED
 
+plot(1:415, est.info$risk)
 # for simultaneous inference, default set to 5\%
 ci = ci_gentmle(est.info, level = 0.95)
 ci

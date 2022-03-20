@@ -61,3 +61,22 @@ logit_fluctuate <- function(tmledata, flucmod, truncate = 0) {
   })
   list(eps = coef(fluc))
 }
+
+#' @export
+ind_choose = function(CIs, incre) {
+  right = CIs[,3]
+  left = CIs[,2]
+  if (incre) {
+    ind = order(right)[1]
+  } else {
+    ind = order(left, decreasing = TRUE)[1]
+  }
+  return(ind)
+}
+
+#' @export
+ci_form = function(est, SE, z_alpha) {
+  df = as.data.frame(cbind(est, est - z_alpha*SE, est + z_alpha*SE))
+  colnames(df) = c("ests", "left", "right")
+  return(df)
+}

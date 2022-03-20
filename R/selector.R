@@ -1,4 +1,4 @@
-
+#' @export
 bwselect_jl = function(ests, SEs, len, plus = TRUE, z_alpha = 1.96)
 {
   # form the CI's' according to z_alpha
@@ -7,64 +7,60 @@ bwselect_jl = function(ests, SEs, len, plus = TRUE, z_alpha = 1.96)
   # we travel until no longer helpful
   
   r = nrow(CIs)
-  for(i in (len+1):r) {
-    ans = all(sign(CIs[i:(i + 1 - len), 1] - CIs[(i - 1):(i - len), 1]) >= 0) |
-      all(sign(CIs[i:(i + 1 - len), 1] - CIs[(i-1):(i - len), 1]) <= 0)
+  for(i in len:r) {
+    ans = all(sign(CIs[i:(i - len+2), 1] - CIs[(i - 1):(i - len+1), 1]) >= 0) |
+      all(sign(CIs[i:(i - len+2), 1] - CIs[(i-1):(i - len+1), 1]) <= 0)
     if (ans) {
-      start_h = i-5 
+      start_h = i-len+1 
+      decre = CIs[start_h+1, 1] < CIs[start_h, 1] 
+      no_mono = FALSE
+      end_h = i
+      j=i
+      continue = TRUE
+      while (continue &  j<r) {
+        if (decre) continue = CIs[(j+1), 1] - CIs[j, 1] < 0 else {
+          continue = CIs[(j+1), 1] - CIs[j, 1] >= 0
+        }
+        if (continue) end_h = j+1
+        j=j+1
+      }
       break
-    } else start_h = r
+    } else no_mono = TRUE
   }
   
-  if (start_h != r) {
-  decre = CIs[start_h+5,1] < CIs[start_h+4,1]
-  for (i in start_h:(r-1)){
-    if (decre) {
-      end_h = i + 1
-      if (!(CIs[i,1] >= CIs[(i+1),1])) {
-        end_h = i
-        break
-      }
-    } else {
-      end_h = i + 1
-      if (!(CIs[i,1] <= CIs[(i+1),1])) {
-        end_h = i
-        break
-      }
-    }
-  }
-  
-  if (decre) ind = order(CIs[start_h:end_h,2], decreasing = TRUE)[1] else {
-    ind = order(CIs[start_h:end_h,3])[1]
-  }
-  ind = ifelse((start_h:end_h)[ind] == r, r, (start_h:end_h)[ind]+1)
-  
-  if (plus) {
-    SE_vec = (CIs[,3] - CIs[,2])/(2*z_alpha)
-    SE_vecI = pava(y=SE_vec, decreasing = TRUE)
-    
-    if (decre) ind_plus = order((CIs[,1] - z_alpha*SE_vecI)[start_h:end_h], decreasing = TRUE)[1] else {
-      ind_plus = order((CIs[,1] + z_alpha*SE_vecI)[start_h:end_h])[1]
-    }
-    
-    ind_plus = (start_h:end_h)[ind_plus]
-    ind_plus = ifelse(ind_plus==r, r, ind_plus+1)
-    if (SE_vecI[ind_plus] >= SE_vec[ind_plus]) {
-      CI_plus = c(CIs[ind_plus,1], 
-                  CIs[ind_plus,1]-z_alpha*SE_vecI[ind_plus],
-                  CIs[ind_plus,1]+z_alpha*SE_vecI[ind_plus])
-    } else {
+  if (no_mono) {
+    ind = r
+    if (plus) {
+      ind_plus = r
       CI_plus = CIs[ind_plus,]
     }
-    
+  } else {
+    if (decre) ind = order(CIs[start_h:end_h,2], decreasing = TRUE)[1] else {
+      ind = order(CIs[start_h:end_h,3])[1]
+    }
+    ind = (start_h:end_h)[ind]
+    if (plus) {
+      SE_vec = ((CIs[,3] - CIs[,2])/(2*z_alpha))[start_h:end_h]
+      SE_vecI = pava(y=SE_vec, decreasing = TRUE)
+      
+      if (decre) ind_temp = order((CIs[start_h:end_h,1] - z_alpha*SE_vecI), decreasing = TRUE)[1] else {
+        ind_temp = order((CIs[start_h:end_h,1] + z_alpha*SE_vecI))[1]
+      }
+      ind_plus = (start_h:end_h)[ind_temp]
+      if (SE_vecI[ind_temp] >= SE_vec[ind_temp]) {
+        CI_plus = c(CIs[ind_plus,1], 
+                    CIs[ind_plus,1]-z_alpha*SE_vecI[ind_temp],
+                    CIs[ind_plus,1]+z_alpha*SE_vecI[ind_temp])
+      } else {
+        CI_plus = CIs[ind_plus,]
+      }
+    }
+  }
+  if (plus) {
     return(list(CI = CIs[ind,], ind = ind, CI_plus = CI_plus, ind_plus = ind_plus))
   } else return(list(CI = CIs[ind,], ind = ind))
-  } else {
-    if (plus) {
-      return(list(CI = CIs[r,], ind = r, CI_plus = CIs[r,], ind_plus = r))
-    } else return(list(CI = CIs[r,], ind = r))
-  } 
 }
+
 
 bwselect_m = function(ests, SEs, truth = NULL, SE_true = NULL, z_alpha = 1.96)
 {
@@ -93,7 +89,7 @@ bwselect_m = function(ests, SEs, truth = NULL, SE_true = NULL, z_alpha = 1.96)
     incre0 = truth$S0 <= truth$S0h
     if (incre == incre0) {
       estsI0_wt =  estsI_wt
-      } else estsI0_wt = pava(y=ests, decreasing = !incre0, w=w)
+    } else estsI0_wt = pava(y=ests, decreasing = !incre0, w=w)
     
     # CIs with isotonic ests from true incre indication and isotonic SEs      
     CIsI0_var = ci_form(estsI0_wt, SEsI, z_alpha)
@@ -120,7 +116,7 @@ bwselect_m = function(ests, SEs, truth = NULL, SE_true = NULL, z_alpha = 1.96)
     # isotonize using the true incr and true vars as wts
     if (incre == incre0) {
       estsI0_wt0 = estsI_wt0
-      } else estsI0_wt0 = pava(y=ests, decreasing = !incre0, w=w0)
+    } else estsI0_wt0 = pava(y=ests, decreasing = !incre0, w=w0)
     
     # The below two CIs might be the same in incre = incre0
     CIsI_var0 = ci_form(estsI_wt0, SE_true, z_alpha)

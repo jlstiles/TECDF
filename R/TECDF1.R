@@ -1,16 +1,5 @@
-#' @title TECDF
-#' @description computes kernel smoothed treatment effect or Treatment Effect CDF
-#' @param initdata a list with elements Q, a data.frame with columns named QAW, Q1W, Q0W for initial 
-#' predictions for the outcome, outcome under A=1 and under A=0, resp. A, a vector of binary 
-#' treatment assignments and Y, the outcome and g1W, a vector of propensity scores. 
-#' @param kernel, see make_kernel
-#' @param blip, a vector of treatment effect value(s).
-#' @param h, the bandwidth
-#' @param max_iter, Maximum number of iteration steps
-#' @param simultaneous.inference, do you want to compute simultaneous CI's (see ci_gentmle) 
-#' @example /inst/quick_example.R  
-#' @export
-TECDF = function(initdata=initdata, kernel = kernel, TE, h, 
+
+TECDF1 = function(initdata=initdata, kernel = kernel, TE, h, 
                    max_iter = 100, simultaneous.inference = TRUE)  {
   estimate_fun = TEdist_estimate
   update_fun = TEdist_update
@@ -64,7 +53,7 @@ TECDF = function(initdata=initdata, kernel = kernel, TE, h,
     
     result <- list(initdata = initdata, Q = eststep$Q, initests = initests, tmleests = eststep$ests,
                    steps = j, coefs = updatestep$coefs,Dstar = eststep$Dstar, ED = ED, ED2 = ED2,
-                   simultaneous.inference = simultaneous.inference, risk=risk, converge = converge)
+                   simultaneous.inference = simultaneous.inference, risk=risk)
     
     return(result)
   }
